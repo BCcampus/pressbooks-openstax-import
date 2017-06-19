@@ -12,6 +12,7 @@
  * @package         Pressbooks_Openstax_Import
  */
 
+use BCcampus\Import\OpenStax;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	return;
@@ -43,7 +44,6 @@ function poi_init() {
 }
 add_action( 'init', 'poi_init' );
 
-
 /**
  * Will add our flavour of import to the select list on import page
  *
@@ -53,11 +53,38 @@ add_action( 'init', 'poi_init' );
  */
 function poi_add_import_type( $types ) {
 	if ( is_array( $types ) && ! array_key_exists( 'cnx' ) ) {
-		$types['cnx'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)' );
+		$types['zip'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)' );
 	}
 
 	return $types;
 }
-
 add_filter( 'pb_select_import_type', 'poi_add_import_type' );
 
+/**
+ * Inserts our OpenStax Class into the mix
+ *
+ * @return OpenStax\Cnx
+ */
+function poi_add_initialize_import(){
+	$importer = new OpenStax\Cnx();
+
+	return $importer;
+}
+add_filter( 'pb_initialize_import', 'poi_add_initialize_import' );
+
+/**
+ * Associates a file type with a mimetype
+ *
+ * @param $allowed_file_types
+ *
+ * @return array
+ */
+function poi_import_file_types( $allowed_file_types ) {
+	if ( is_array( $allowed_file_types ) &&  array_key_exists( 'pb_import_file_types' ) ) {
+		$allowed_file_types['pb_import_file_types']['zip'] = 'application/zip';
+	}
+
+	return $allowed_file_types;
+
+}
+add_filter( 'pb_import_file_types', 'poi_import_file_types' );

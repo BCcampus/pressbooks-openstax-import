@@ -48,6 +48,10 @@ class Cnx extends Import {
 	 */
 	function setCurrentImportOption( array $upload ) {
 		// TODO: Implement setCurrentImportOption() method.
+		echo "setcurrentimportoption<pre>";
+		print_r( get_defined_vars() );
+		echo "</pre>";
+		die();
 	}
 
 	/**
@@ -57,5 +61,9 @@ class Cnx extends Import {
 	 */
 	function import( array $current_import ) {
 		// TODO: Implement import() method.
+		echo "import<pre>";
+		print_r( get_defined_vars() );
+		echo "</pre>";
+		die();
 	}
 }
