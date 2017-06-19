@@ -25,7 +25,6 @@ if ( ! defined( 'POI_DIR' ) ) {
 	define( 'POI_DIR', __DIR__ . '/' );
 } // Must have trailing slash!
 
-add_action( 'init', 'poi_init' );
 function poi_init() {
 	// Must meet miniumum requirements
 	if ( ! @include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) {
@@ -39,6 +38,26 @@ function poi_init() {
 		} );
 		return;
 	} else {
-		require_once PB_MPDF_DIR . 'inc/modules/import/openstax/class-pb-openstax.php';
+		require_once POI_DIR . 'inc/modules/import/openstax/class-cnx.php';
 	}
 }
+add_action( 'init', 'poi_init' );
+
+
+/**
+ * Will add our flavour of import to the select list on import page
+ *
+ * @param $types
+ *
+ * @return mixed
+ */
+function poi_add_import_type( $types ) {
+	if ( is_array( $types ) && ! array_key_exists( 'cnx' ) ) {
+		$types['cnx'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)' );
+	}
+
+	return $types;
+}
+
+add_filter( 'pb_select_import_type', 'poi_add_import_type' );
+
