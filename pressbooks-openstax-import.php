@@ -97,7 +97,7 @@ function check_latex() {
 
 	$all_plugins = get_plugins();
 
-	if ( is_plugin_active( $path ) ) {
+	if ( is_plugin_active_for_network( $path ) ) {
 		// quickLaTeX plugin is installed and active, do nothing
 	} else if ( isset( $all_plugins[ $path ] ) ) {
 		add_action( 'network_admin_notices', function () {
