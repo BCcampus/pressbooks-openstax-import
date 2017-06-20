@@ -93,7 +93,17 @@ add_filter( 'pb_import_file_types', 'poi_import_file_types' );
  * Verify WP QuickLaTeX is installed, message goes away once activated
  */
 function check_latex() {
-	if ( ! is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) {
+	$path = 'wp-quicklatex/wp-quicklatex.php';
+
+	$all_plugins = get_plugins();
+
+	if ( is_plugin_active( $path ) ) {
+		// quickLaTeX plugin is installed and active, do nothing
+	} else if ( isset( $all_plugins[ $path ] ) ) {
+		add_action( 'network_admin_notices', function () {
+			echo '<div id="message" class="error fade"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please activate WP QuickLaTeX for multiline equations and svg image export support. ' ) . '</p></div>';
+		} );
+	} else {
 		add_action( 'network_admin_notices', function () {
 			$plugin_name  = 'WP QuickLaTeX';
 			$install_link = '<a href="' . esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $plugin_name . '&TB_iframe=true&width=600&height=550' ) ) . '" target="_parent" title="More info about ' . $plugin_name . '">install</a> and activate';
@@ -103,3 +113,4 @@ function check_latex() {
 }
 
 add_action( 'admin_init', 'check_latex' );
+
