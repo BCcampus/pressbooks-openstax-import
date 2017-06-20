@@ -88,3 +88,18 @@ function poi_import_file_types( $allowed_file_types ) {
 
 }
 add_filter( 'pb_import_file_types', 'poi_import_file_types' );
+
+/**
+ * Verify WP QuickLaTeX is installed, message goes away once activated
+ */
+function check_latex() {
+	if ( ! is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) {
+		add_action( 'network_admin_notices', function () {
+			$plugin_name  = 'WP QuickLaTeX';
+			$install_link = '<a href="' . esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $plugin_name . '&TB_iframe=true&width=600&height=550' ) ) . '" target="_parent" title="More info about ' . $plugin_name . '">install</a> and activate';
+			echo '<div id="message" class="error fade"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support. ' ) . '</p></div>';
+		} );
+	}
+}
+
+add_action( 'admin_init', 'check_latex' );
