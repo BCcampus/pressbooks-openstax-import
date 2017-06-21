@@ -48,12 +48,7 @@ function poi_init() {
 	 */
 	if ( file_exists( $composer = POI_DIR . 'vendor/autoload.php' ) ) {
 		require_once( $composer );
-	} else {
-		if ( ! class_exists( 'PAnD' ) ) {
-			die( sprintf( __( 'Pressbooks Openstax Import plugin dependency is missing. Please make sure that your project&rsquo;s <a href="%1$s">Composer autoload file</a> is being required and that <a href="%2$s">persist admin notices dismissal</a> exists in this plugins vendor directory. ' ), 'https://getcomposer.org/doc/01-basic-usage.md#autoloading', 'https://github.com/collizo4sky/persist-admin-notices-dismissal' ) );
-		}
 	}
-
 }
 
 add_action( 'init', 'poi_init' );
@@ -120,7 +115,7 @@ function check_latex() {
 		// quickLaTex is installed but not active, remind the network administrator to activate it
 		add_action( 'network_admin_notices', function () {
 			// don't annoy them anymore if they've dismissed the activate notice
-			if ( ! PAnD::is_admin_notice_active( 'activate-notice-forever' ) ) {
+			if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'activate-notice-forever' ) ) {
 				return;
 			}
 			// annoy them if they haven't dismissed the activate notice
@@ -129,7 +124,7 @@ function check_latex() {
 		// ask book admin to activate it since the Network Admin has made it available to them
 		add_action( 'admin_notices', function () {
 			// don't annoy them anymore if they've dismissed the activate notice
-			if ( ! PAnD::is_admin_notice_active( 'single-activate-notice-forever' ) ) {
+			if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'single-activate-notice-forever' ) ) {
 				return;
 			}
 			// annoy them if they haven't dismissed the activate notice
@@ -139,7 +134,7 @@ function check_latex() {
 		// remind Network Admin to install quickLaTeX
 		add_action( 'network_admin_notices', function () {
 			// don't annoy them if they've dismissed install notice
-			if ( ! PAnD::is_admin_notice_active( 'install-notice-forever' ) ) {
+			if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'install-notice-forever' ) ) {
 				return;
 			}
 			// annoy them if they haven't dismissed the install notice
