@@ -13,10 +13,29 @@
  */
 
 namespace BCcampus\Import\OpenStax;
+
 use \Pressbooks\Modules\Import\Import;
 
 
 class Cnx extends Import {
+
+	/**
+	 * @var \ZipArchive
+	 */
+	protected $zip;
+
+	/**
+	 *
+	 */
+	function __construct() {
+		if ( ! function_exists( 'media_handle_sideload' ) ) {
+			require_once( ABSPATH . 'wp-admin/includes/image.php' );
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
+			require_once( ABSPATH . 'wp-admin/includes/media.php' );
+		}
+
+		$this->zip = new \ZipArchive();
+	}
 
 	/**
 	 * Mandatory setCurrentImportOption() method, creates WP option 'pressbooks_current_import'
@@ -47,11 +66,35 @@ class Cnx extends Import {
 	 * @return bool
 	 */
 	function setCurrentImportOption( array $upload ) {
-		// TODO: Implement setCurrentImportOption() method.
-		echo "setcurrentimportoption<pre>";
+		$result = false;
+		// check that the url is from cnx.org
+		$valid_domain = wp_parse_url( $upload['url'] );
+
+		if ( 0 === strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 === strcmp( $valid_domain['scheme'], 'https' ) ) ) {
+			$tmp_file = download_url( $upload['url'], 300 );
+
+			try {
+				$this->isValidZip( $tmp_file );
+
+			} catch ( \Exception $e ) {
+				return false;
+			}
+		}
+
+		$option = [
+			'file'      => $upload['file'],
+			'file_type' => $upload['type'],
+			'type_of'   => 'odt',
+			'chapters'  => [],
+		];
+		// @TODO implement further
+		echo "<pre>";
 		print_r( get_defined_vars() );
 		echo "</pre>";
 		die();
+
+		return update_option( 'pressbooks_current_import', $option );
+
 	}
 
 	/**
@@ -66,4 +109,26 @@ class Cnx extends Import {
 		echo "</pre>";
 		die();
 	}
+
+	/**
+	 * @param $file_path
+	 *
+	 * @throws \Exception
+	 */
+	private function isValidZip( $file_path ) {
+		$result = $this->zip->open( $file_path );
+
+		if ( true !== $result ) {
+			throw new \Exception( 'Opening CNX file failed' );
+		}
+
+		// CNX files always have this index file
+		$ok = $this->zip->getZipContent( 'collection.xml' );
+
+		if ( ! $ok ) {
+			throw new \Exception( 'Bad or corrupted collection.xml' );
+		}
+
+	}
+
 }
