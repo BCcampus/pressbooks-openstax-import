@@ -61,7 +61,7 @@ add_action( 'init', 'poi_init' );
  * @return mixed
  */
 function poi_add_import_type( $types ) {
-	if ( is_array( $types ) && ! array_key_exists( 'cnx' ) ) {
+	if ( is_array( $types ) && ! array_key_exists( 'cnx', $types ) ) {
 		$types['zip'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)' );
 	}
 
@@ -91,7 +91,8 @@ add_filter( 'pb_initialize_import', 'poi_add_initialize_import' );
  * @return array
  */
 function poi_import_file_types( $allowed_file_types ) {
-	if ( is_array( $allowed_file_types ) && array_key_exists( 'pb_import_file_types' ) ) {
+
+	if ( is_array( $allowed_file_types ) &&  array_key_exists( 'pb_import_file_types', $allowed_file_types ) ) {
 		$allowed_file_types['pb_import_file_types']['zip'] = 'application/zip';
 	}
 
