@@ -43,6 +43,17 @@ function poi_init() {
 	} else {
 		require_once POI_DIR . 'inc/modules/import/openstax/class-cnx.php';
 	}
+	/**
+	 * Composer autoloader (if needed)
+	 */
+	if ( file_exists( $composer = POI_DIR . 'vendor/autoload.php' ) ) {
+		require_once( $composer );
+	} else {
+		if ( ! class_exists( 'PAnD' ) ) {
+			die( sprintf( __( 'Pressbooks Openstax Import plugin dependency is missing. Please make sure that your project&rsquo;s <a href="%1$s">Composer autoload file</a> is being required and that <a href="%2$s">persist admin notices dismissal</a> exists in this plugins vendor directory. ' ), 'https://getcomposer.org/doc/01-basic-usage.md#autoloading', 'https://github.com/collizo4sky/persist-admin-notices-dismissal' ) );
+		}
+	}
+
 }
 
 add_action( 'init', 'poi_init' );
@@ -94,18 +105,6 @@ function poi_import_file_types( $allowed_file_types ) {
 }
 
 add_filter( 'pb_import_file_types', 'poi_import_file_types' );
-
-
-/**
- * Composer autoloader (if needed)
- */
-if ( file_exists( $composer = POI_DIR . 'vendor/autoloads.php' ) ) {
-	require_once( $composer );
-} else {
-	if ( ! class_exists( '\persist-admin-notices-dismissal\persist-admin-notices-dismissal' ) ) {
-		die( sprintf( __( 'A Pressbooks Openstax Import plugin dependency is missing. Please make sure that your project&rsquo;s <a href="%1$s">Composer autoload file</a> is being required, and that <a href="%2$s">persist admin notices dismissal</a> exists in this plugins vendor directory.' ), 'https://getcomposer.org/doc/01-basic-usage.md#autoloading', 'https://github.com/collizo4sky/persist-admin-notices-dismissal' ) );
-	}
-}
 
 /**
  * Verify WP QuickLaTeX is installed and active, notice goes away once activated or dismissed
