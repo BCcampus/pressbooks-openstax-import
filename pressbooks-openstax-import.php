@@ -113,7 +113,7 @@ function check_latex() {
 	if ( is_plugin_active_for_network( $path ) ) {
 		// quickLaTeX plugin is installed and active, do nothing
 	} else if ( isset( $all_plugins[ $path ] ) ) {
-		// quickLaTex is installed but not active, remind the network administrator to activate it
+		// quickLaTex is installed but not active at network level, remind the network administrator to network activate it
 		add_action( 'network_admin_notices', function () {
 			// don't annoy them anymore if they've dismissed the activate notice
 			if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'activate-notice-forever' ) ) {
@@ -122,7 +122,7 @@ function check_latex() {
 			// annoy them if they haven't dismissed the activate notice
 			echo '<div data-dismissible="activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please network activate WP QuickLaTeX for multiline equations and svg image export support. ' ) . '</p></div>';
 		} );
-
+		// quickLaTex is installed but not active at book level, remind the book administrator to activate it
 		if ( ! is_plugin_active( $path ) ) {
 
 			add_action( 'admin_notices', function () {
