@@ -92,7 +92,7 @@ add_filter( 'pb_initialize_import', 'poi_add_initialize_import' );
  */
 function poi_import_file_types( $allowed_file_types ) {
 
-	if ( is_array( $allowed_file_types ) &&  array_key_exists( 'pb_import_file_types', $allowed_file_types ) ) {
+	if ( is_array( $allowed_file_types ) && array_key_exists( 'pb_import_file_types', $allowed_file_types ) ) {
 		$allowed_file_types['pb_import_file_types']['zip'] = 'application/zip';
 	}
 
@@ -120,17 +120,20 @@ function check_latex() {
 				return;
 			}
 			// annoy them if they haven't dismissed the activate notice
-			echo '<div data-dismissible="activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please activate WP QuickLaTeX for multiline equations and svg image export support. ' ) . '</p></div>';
+			echo '<div data-dismissible="activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please network activate WP QuickLaTeX for multiline equations and svg image export support. ' ) . '</p></div>';
 		} );
-		// ask book admin to activate it since the Network Admin has made it available to them
-		add_action( 'admin_notices', function () {
-			// don't annoy them anymore if they've dismissed the activate notice
-			if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'single-activate-notice-forever' ) ) {
-				return;
-			}
-			// annoy them if they haven't dismissed the activate notice
-			echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import: ' . '</b>' . 'Your Network Administrator has made ' . '<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">' . 'WP QuickLaTeX</a>' . ' available to you from your plugins menu. Please activate it to enable multiline equations, and svg image export support. ' ) . '</p></div>';
-		} );
+
+		if ( ! is_plugin_active( $path ) ) {
+
+			add_action( 'admin_notices', function () {
+				// don't annoy them anymore if they've dismissed the activate notice
+				if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'single-activate-notice-forever' ) ) {
+					return;
+				}
+				// annoy them if they haven't dismissed the activate notice
+				echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import: ' . '</b>' . 'Your Network Administrator has made ' . '<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">' . 'WP QuickLaTeX</a>' . ' available to you from your plugins menu. Please activate it to enable multiline equations, and svg image export support. ' ) . '</p></div>';
+			} );
+		}
 	} else {
 		// remind Network Admin to install quickLaTeX
 		add_action( 'network_admin_notices', function () {
