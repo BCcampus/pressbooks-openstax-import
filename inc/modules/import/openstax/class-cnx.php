@@ -25,6 +25,11 @@ class Cnx extends Import {
 	protected $zip;
 
 	/**
+	 * @var
+	 */
+	protected $baseDirectory;
+
+	/**
 	 *
 	 */
 	function __construct() {
@@ -66,7 +71,6 @@ class Cnx extends Import {
 	 * @return bool
 	 */
 	function setCurrentImportOption( array $upload ) {
-		$result = false;
 		// check that the url is from cnx.org
 		$valid_domain = wp_parse_url( $upload['url'] );
 
@@ -74,27 +78,133 @@ class Cnx extends Import {
 			$tmp_file = download_url( $upload['url'], 300 );
 
 			try {
-				$this->isValidZip( $tmp_file );
+				$this->setValidZip( $tmp_file );
 
 			} catch ( \Exception $e ) {
 				return false;
 			}
+
+			$collection_contents = $this->parseManifest();
+
+			$posts = $this->customSort( $collection_contents );
+
+			$option = [
+				'file'        => $tmp_file,
+				'file_type'   => 'application/zip',
+				'type_of'     => 'zip',
+				'chapters'    => $posts['chapters'],
+				'post_types'  => $posts['post_types'],
+				'allow_parts' => true,
+			];
+
+			return update_option( 'pressbooks_current_import', $option );
+
 		}
 
-		$option = [
-			'file'      => $upload['file'],
-			'file_type' => $upload['type'],
-			'type_of'   => 'odt',
-			'chapters'  => [],
-		];
-		// @TODO implement further
-		echo "<pre>";
-		print_r( get_defined_vars() );
-		echo "</pre>";
-		die();
+	}
 
-		return update_option( 'pressbooks_current_import', $option );
 
+	/**
+	 * Checks for valid xml, gets required content from it
+	 *
+	 * @return array
+	 * @throws \Exception
+	 */
+	private function parseManifest() {
+		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
+
+		/*
+		|--------------------------------------------------------------------------
+		| Saftey Check
+		|--------------------------------------------------------------------------
+		|
+		|
+		|
+		|
+		*/
+		libxml_use_internal_errors( true );
+
+		$old_value    = libxml_disable_entity_loader( true );
+		$dom          = new \DOMDocument;
+		$dom->recover = true; // Try to parse non-well formed documents
+		$success      = $dom->loadXML( $collection->asXML() );
+		foreach ( $dom->childNodes as $child ) {
+			if ( XML_DOCUMENT_TYPE_NODE === $child->nodeType ) {
+				// Invalid XML: Detected use of disallowed DOCTYPE
+				$success = false;
+				break;
+			}
+		}
+		libxml_disable_entity_loader( $old_value );
+
+		if ( ! $success || isset( $dom->doctype ) ) {
+			throw new \Exception( print_r( libxml_get_errors(), true ) );
+		}
+
+		$xml = simplexml_import_dom( $dom );
+		unset( $dom );
+
+		// halt if loading produces an error
+		if ( ! $xml ) {
+			throw new \Exception( print_r( libxml_get_errors(), true ) );
+		}
+
+		//
+		/*
+		|--------------------------------------------------------------------------
+		| Metadata
+		|--------------------------------------------------------------------------
+		|
+		|  check that we're grabbing from the right repo
+		|
+		|
+		*/
+
+		$namespaces = $xml->getDocNamespaces();
+		$repo       = $xml->metadata->children( $namespaces['md'] );
+
+		if ( 'http://cnx.org/content' != $repo->repository ) {
+			throw new \Exception( 'The expected repository cnx.org/content does not appear to be where this file has been retrieved from' );
+		}
+
+		/*
+		|--------------------------------------------------------------------------
+		| Content
+		|--------------------------------------------------------------------------
+		|
+		| get parts, chapters and directory names and sequence
+		|
+		|
+		*/
+		foreach ( $xml->xpath( '/col:collection/col:content/col:subcollection' ) as $parts ) {
+			$part     = $parts->children( $namespaces['md'] );
+			$contents = $parts->children( $namespaces['col'] );
+			$titles   = $parts->xpath( 'col:content/col:module/md:title' );
+
+			// get chapter titles
+			foreach ( $titles as $title ) {
+				$title_name[] = (string) $title[0];
+			}
+
+			// get  order of directories
+			foreach ( $contents->content->module as $content ) {
+				$dir_name[] = (string) $content->attributes()->document;
+			}
+
+			// put it all together
+			$book[] = [
+				'part_title'      => (string) $part->title,
+				'chapter_titles'  => $title_name,
+				'directory_order' => $dir_name,
+			];
+
+			// otherwise the array gets loooong
+			unset ( $title_name );
+			unset ( $dir_name );
+
+		}
+
+		return $book;
 	}
 
 	/**
@@ -111,23 +221,82 @@ class Cnx extends Import {
 	}
 
 	/**
+	 * Opens the zip file, set as an instance variable
+	 * grabs and sets a directory name
+	 *
 	 * @param $file_path
 	 *
 	 * @throws \Exception
 	 */
-	private function isValidZip( $file_path ) {
+	private function setValidZip( $file_path ) {
 		$result = $this->zip->open( $file_path );
 
 		if ( true !== $result ) {
 			throw new \Exception( 'Opening CNX file failed' );
 		}
 
-		// CNX files always have this index file
-		$ok = $this->zip->getZipContent( 'collection.xml' );
+		// CNX files always have collection.xml as the first file
+		$name      = $this->zip->getNameIndex( 0 );
+		$directory = explode( '/', $name, - 1 );
+
+		// set random directory name in an instance variable
+		$this->baseDirectory = ( $directory ) ? $directory[0] : '';
+
+		$ok = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml' );
 
 		if ( ! $ok ) {
 			throw new \Exception( 'Bad or corrupted collection.xml' );
 		}
+
+	}
+
+	/**
+	 * Locates an entry using its name, returns the entry contents
+	 *
+	 * @param $file
+	 * @param bool $as_xml
+	 *
+	 * @return string|\SimpleXMLElement
+	 */
+	protected function getZipContent( $file, $as_xml = true ) {
+
+		// Locates an entry using its name
+		$index = $this->zip->locateName( urldecode( $file ) );
+
+		if ( false === $index ) {
+			return '';
+		}
+
+		// returns the contents using its index
+		$content = $this->zip->getFromIndex( $index );
+
+		// if it's not xml, return
+		if ( ! $as_xml ) {
+			return $content;
+		}
+
+		return new \SimpleXMLElement( $content );
+	}
+
+	/**
+	 * Adjust the array to format we need for wp_options
+	 *
+	 * @param $collection_contents
+	 *
+	 * @return mixed
+	 */
+	private function customSort( $collection_contents ) {
+
+		foreach ( $collection_contents as $part ) {
+			$option['chapters'][]   = $part['part_title'];
+			$option['post_types'][] = 'part';
+			foreach ( $part['directory_order'] as $key => $id ) {
+				$option['chapters'][ $id ]   = $part['chapter_titles'][ $key ];
+				$option['post_types'][ $id ] = 'chapter';
+			}
+		}
+
+		return $option;
 
 	}
 
