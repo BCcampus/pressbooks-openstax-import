@@ -79,12 +79,13 @@ class Cnx extends Import {
 
 			try {
 				$this->setValidZip( $tmp_file );
+				$collection_contents = $this->parseManifest();
 
 			} catch ( \Exception $e ) {
+				// delete the file before we go
+				unlink( $tmp_file );
 				return false;
 			}
-
-			$collection_contents = $this->parseManifest();
 
 			$posts = $this->customSort( $collection_contents );
 
@@ -118,7 +119,7 @@ class Cnx extends Import {
 		| Saftey Check
 		|--------------------------------------------------------------------------
 		|
-		|
+		| merci Dac!
 		|
 		|
 		*/
@@ -161,10 +162,13 @@ class Cnx extends Import {
 		*/
 
 		$namespaces = $xml->getDocNamespaces();
-		$repo       = $xml->metadata->children( $namespaces['md'] );
 
-		if ( 'http://cnx.org/content' != $repo->repository ) {
-			throw new \Exception( 'The expected repository cnx.org/content does not appear to be where this file has been retrieved from' );
+		$repo       = $xml->metadata->children( $namespaces['md'] );
+		$cnx = wp_parse_url( $repo->repository, PHP_URL_HOST );
+		$expected = [ 'cnx.org', 'legacy.cnx.org' ];
+
+		if ( ! in_array( $cnx, $expected ) ) {
+			throw new \Exception( 'The expected CNX repository does not appear to be where this file has been retrieved from' );
 		}
 
 		/*
