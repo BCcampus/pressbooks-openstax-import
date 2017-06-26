@@ -79,7 +79,7 @@ class Cnx extends Import {
 
 			try {
 				$this->setValidZip( $tmp_file );
-				$collection_contents = $this->parseManifest();
+				$collection_contents = $this->parseManifestContent();
 
 			} catch ( \Exception $e ) {
 				// delete the file before we go
@@ -106,22 +106,21 @@ class Cnx extends Import {
 
 	}
 
-
 	/**
-	 * Checks for valid xml, gets required content from it
+	 * Original function by Dac Chartrand, modified only slighty
 	 *
-	 * @return array
+	 * @param string $xml
+	 *
+	 * @return \SimpleXMLElement|string
 	 * @throws \Exception
 	 */
-	private function parseManifest() {
-		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
-
+	protected function safetyDance( $xml ) {
 		/*
 		|--------------------------------------------------------------------------
-		| Safety
+		| Sanity
 		|--------------------------------------------------------------------------
 		|
-		| merci Dac!
+		|
 		|
 		|
 		*/
@@ -130,7 +129,7 @@ class Cnx extends Import {
 		$old_value    = libxml_disable_entity_loader( true );
 		$dom          = new \DOMDocument;
 		$dom->recover = true; // Try to parse non-well formed documents
-		$success      = $dom->loadXML( $collection->asXML() );
+		$success      = $dom->loadXML( $xml );
 		foreach ( $dom->childNodes as $child ) {
 			if ( XML_DOCUMENT_TYPE_NODE === $child->nodeType ) {
 				// Invalid XML: Detected use of disallowed DOCTYPE
@@ -152,13 +151,12 @@ class Cnx extends Import {
 			throw new \Exception( print_r( libxml_get_errors(), true ) );
 		}
 
-		//
 		/*
 		|--------------------------------------------------------------------------
-		| Metadata
+		| Expected Metadata
 		|--------------------------------------------------------------------------
 		|
-		|  check that we're grabbing from the right repo
+		| Confirm that it's from an expected repo
 		|
 		|
 		*/
@@ -172,6 +170,30 @@ class Cnx extends Import {
 		if ( ! in_array( $cnx, $expected ) ) {
 			throw new \Exception( 'The expected CNX repository does not appear to be where this file has been retrieved from' );
 		}
+
+		return $xml;
+	}
+
+	/**
+	 * @return array
+	 */
+	private function parseManifestMetadata() {
+
+		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
+		$xml        = $this->safetyDance( $collection->asXML() );
+
+		/*
+		|--------------------------------------------------------------------------
+		| Metadata
+		|--------------------------------------------------------------------------
+		|
+		|  check that we're grabbing from the right repo
+		|
+		|
+		*/
+
+		$namespaces = $xml->getDocNamespaces();
+		$meta = $xml->metadata->children( $namespaces['md'] );
 
 		// authors
 		foreach ( $meta->actors->person as $author ) {
@@ -201,6 +223,21 @@ class Cnx extends Import {
 			'organizations' => $organizations,
 		];
 
+		return $metadata;
+
+	}
+
+	/**
+	 * Checks for valid xml, gets required content from it
+	 *
+	 * @return array
+	 * @throws \Exception
+	 */
+	private function parseManifestContent() {
+
+		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
+		$xml        = $this->safetyDance( $collection->asXML() );
+
 		/*
 		|--------------------------------------------------------------------------
 		| Content
@@ -210,6 +247,8 @@ class Cnx extends Import {
 		|
 		|
 		*/
+		$namespaces = $xml->getDocNamespaces();
+
 		foreach ( $xml->xpath( '/col:collection/col:content/col:subcollection' ) as $parts ) {
 			$part     = $parts->children( $namespaces['md'] );
 			$contents = $parts->children( $namespaces['col'] );
@@ -227,7 +266,6 @@ class Cnx extends Import {
 
 			// put it all together
 			$book[] = [
-				'metadata'        => $metadata,
 				'part_title'      => (string) $part->title,
 				'chapter_titles'  => $title_name,
 				'directory_order' => $dir_name,
@@ -251,7 +289,8 @@ class Cnx extends Import {
 		// TODO: Implement import() method.
 		try {
 			$this->setValidZip( $current_import['download_url_file'] );
-			$collection_contents = $this->parseManifest();
+			$collection_contents = $this->parseManifestContent();
+			$metadata            = $this->parseManifestMetadata();
 
 		} catch ( \Exception $e ) {
 			// delete the file before we go
@@ -260,7 +299,15 @@ class Cnx extends Import {
 			return false;
 		}
 
-		//$this->parseMetadata( )
+		$match_ids      = array_flip( array_keys( $current_import['chapters'] ) );
+		$chapter_parent = $this->getChapterParent();
+
+		echo "<pre>";
+		print_r( $collection_contents );
+		print_r( $metadata );
+
+		echo "</pre>";
+		die();
 		echo "<pre>";
 		print_r( $current_import );
 		echo "</pre>";
