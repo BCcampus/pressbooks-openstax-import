@@ -84,18 +84,20 @@ class Cnx extends Import {
 			} catch ( \Exception $e ) {
 				// delete the file before we go
 				unlink( $tmp_file );
+
 				return false;
 			}
 
 			$posts = $this->customSort( $collection_contents );
 
 			$option = [
-				'file'        => $tmp_file,
-				'file_type'   => 'application/zip',
-				'type_of'     => 'zip',
-				'chapters'    => $posts['chapters'],
-				'post_types'  => $posts['post_types'],
-				'allow_parts' => true,
+				'file'              => $tmp_file,
+				'download_url_file' => $tmp_file,
+				'file_type'         => 'application/zip',
+				'type_of'           => 'zip',
+				'chapters'          => $posts['chapters'],
+				'post_types'        => $posts['post_types'],
+				'allow_parts'       => true,
 			];
 
 			return update_option( 'pressbooks_current_import', $option );
@@ -116,7 +118,7 @@ class Cnx extends Import {
 
 		/*
 		|--------------------------------------------------------------------------
-		| Saftey Check
+		| Safety
 		|--------------------------------------------------------------------------
 		|
 		| merci Dac!
@@ -163,13 +165,41 @@ class Cnx extends Import {
 
 		$namespaces = $xml->getDocNamespaces();
 
-		$repo       = $xml->metadata->children( $namespaces['md'] );
-		$cnx = wp_parse_url( $repo->repository, PHP_URL_HOST );
+		$meta     = $xml->metadata->children( $namespaces['md'] );
+		$cnx      = wp_parse_url( $meta->repository, PHP_URL_HOST );
 		$expected = [ 'cnx.org', 'legacy.cnx.org' ];
 
 		if ( ! in_array( $cnx, $expected ) ) {
 			throw new \Exception( 'The expected CNX repository does not appear to be where this file has been retrieved from' );
 		}
+
+		// authors
+		foreach ( $meta->actors->person as $author ) {
+			$authors[] = (string) $author->fullname;
+		}
+
+		//organizations
+		foreach ( $meta->actors->organization as $org ) {
+			$organizations[] = (string) $org->fullname;
+		}
+
+		// subjects
+		foreach ( $meta->subjectlist as $item ) {
+			$subjects[] = (string) $item->subject;
+		}
+
+		$metadata = [
+			'language'      => (string) $meta->language,
+			'title'         => (string) $meta->title,
+			'created'       => (string) $meta->created,
+			'revised'       => (string) $meta->revised,
+			'license'       => (string) $meta->license->attributes()->url,
+			'abstract'      => (string) $meta->abstract,
+			'keyword'       => (string) $meta->keywordlist->keyword,
+			'subject'       => $subjects,
+			'authors'       => $authors,
+			'organizations' => $organizations,
+		];
 
 		/*
 		|--------------------------------------------------------------------------
@@ -197,6 +227,7 @@ class Cnx extends Import {
 
 			// put it all together
 			$book[] = [
+				'metadata'        => $metadata,
 				'part_title'      => (string) $part->title,
 				'chapter_titles'  => $title_name,
 				'directory_order' => $dir_name,
@@ -218,8 +249,20 @@ class Cnx extends Import {
 	 */
 	function import( array $current_import ) {
 		// TODO: Implement import() method.
-		echo "import<pre>";
-		print_r( get_defined_vars() );
+		try {
+			$this->setValidZip( $current_import['download_url_file'] );
+			$collection_contents = $this->parseManifest();
+
+		} catch ( \Exception $e ) {
+			// delete the file before we go
+			unlink( $current_import['download_url_file'] );
+
+			return false;
+		}
+
+		//$this->parseMetadata( )
+		echo "<pre>";
+		print_r( $current_import );
 		echo "</pre>";
 		die();
 	}
