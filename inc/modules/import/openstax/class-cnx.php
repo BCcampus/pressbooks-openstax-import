@@ -139,11 +139,8 @@ class Cnx extends Import {
 				unlink( $current_import['download_url_file'] );
 
 			}
-			echo "<pre>";
-			print_r( $html );
-			echo "</pre>";
-			die();
-			//$this->kneadAndInsert( $html, $chapter_title, $this->determinePostType( $id ), $chapter_parent, $current_import['default_post_status'] );
+
+			$this->kneadAndInsert( $html, $chapter_title, $this->determinePostType( $id ), $chapter_parent, $current_import['default_post_status'] );
 
 
 			// Done
@@ -416,30 +413,34 @@ class Cnx extends Import {
 	 */
 	private function mathTransform( $id ) {
 
+		// return string
 		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
 
 		if ( false === $xhtml_string ) {
 			throw new \Exception( 'Required file index.cnxml.html could not be found' );
 		}
 
-		$mathml = preg_match( 'MathML', $xhtml_string );
+		libxml_use_internal_errors( true ); // fetch error info
 
-		if ( 1 === $mathml ) {
-			libxml_use_internal_errors( true ); // fetch error info
+		$filtered_content        = preg_replace( '/\$/', '&#128178;', $xhtml_string );
+		$doc                     = new \DOMDocument( '1.0', 'UTF-8' );
+		$doc->preserveWhiteSpace = false;
+		$doc->recover            = true; // try to parse non-well formed documents
 
-			$filtered_content        = preg_replace( '/\$/', '&#128178;', $xhtml_string );
-			$doc                     = new \DOMDocument( '1.0', 'UTF-8' );
-			$doc->preserveWhiteSpace = false;
-			$doc->recover            = true; // try to parse non-well formed documents
+		// loadHTML does not work because mathml entities generate invalid entity errors
+		// load XML from a string
+		// Disable the ability to load external entities
+		$old_value = libxml_disable_entity_loader( true );
+		$ok        = $doc->loadXML( $filtered_content, LIBXML_NOBLANKS | LIBXML_NONET | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING );
+		libxml_disable_entity_loader( $old_value );
 
-			// loadHTML does not work because mathml entities generate invalid entity errors
-			// load XML from a string
-			// Disable the ability to load external entities
-			$old_value = libxml_disable_entity_loader( true );
-			$doc->loadXML( $filtered_content, LIBXML_NOBLANKS | LIBXML_NONET | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING );
-			libxml_disable_entity_loader( $old_value );
+		if ( ! $ok ) {
+			error_log( print_r( libxml_get_errors(), true ) );
+		}
+		libxml_clear_errors();
 
-
+		$math = $doc->getElementsByTagName( 'math' );
+		if ( $math ) {
 			// xsl
 			$xsl_dom = new \DOMDocument( '1.0', 'UTF-8' );
 			$xsl_dom->load( __DIR__ . '/xsl/mmltex.xsl' );
@@ -453,10 +454,8 @@ class Cnx extends Import {
 
 			$clean = $this->cleanHtml( $xml_string );
 			$html  = '[latexpage]' . $clean;
-			libxml_clear_errors();
 		} else {
 			$html = $this->cleanHtml( $xhtml_string );
-
 		}
 
 		return $html;
@@ -478,13 +477,121 @@ class Cnx extends Import {
 
 		// latex written like \this needs to be protected by escaping with \\this
 		$html_string = addcslashes( $html_string, '\\' );
+
+		// just grab the body element
 		preg_match_all( '/(?:<body[^>]*>)(.*)<\/body>/isU', $html_string, $matches, PREG_PATTERN_ORDER );
 
 		return $matches[1][0];
 	}
 
 	protected function kneadAndInsert( $html, $title, $post_type, $chapter_parent, $post_status ) {
-		// @TODO implement methods
+
+		$body = $this->tidy( $html );
+
+		$body = $this->kneadHtml( $body );
+
+		$title = wp_strip_all_tags( $title );
+
+		$new_post = [
+			'post_title'   => $title,
+			'post_content' => $body,
+			'post_type'    => $post_type,
+			'post_status'  => $post_status,
+		];
+
+		if ( 'chapter' === $post_type ) {
+			$new_post['post_parent'] = $chapter_parent;
+		}
+
+		$pid = wp_insert_post( add_magic_quotes( $new_post ) );
+
+		update_post_meta( $pid, 'pb_show_title', 'on' );
+		update_post_meta( $pid, 'pb_export', 'on' );
+
+		Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
+	}
+
+	/**
+	 * @param string $html
+	 *
+	 * @return string
+	 */
+	protected function tidy( $html ) {
+
+		// Reduce the vulnerability for scripting attacks
+		// Make XHTML 1.1 strict using htmlLawed
+
+		$config = [
+			'safe'               => 1,
+			'valid_xhtml'        => 1,
+			'no_deprecated_attr' => 2,
+			'hook'               => '\Pressbooks\Sanitize\html5_to_xhtml11',
+		];
+
+		return \Pressbooks\HtmLawed::filter( $html, $config );
+	}
+
+	/**
+	 * @param $html
+	 *
+	 * @return string
+	 */
+	protected function kneadHtml( $html ) {
+		libxml_use_internal_errors( true );
+
+		// Load HTMl snippet into DOMDocument using UTF-8 hack
+		$utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
+		$doc       = new \DOMDocument();
+		$doc->loadHTML( $utf8_hack . $html );
+
+		// Change image paths
+		$doc = $this->scrapeAndKneadImages( $doc );
+
+		// If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
+		// Ie. It will spit out the characters converted in encoded format. Instead do the following:
+		$html = $doc->saveXML( $doc->documentElement );
+
+		if ( ! $html ) {
+			error_log( print_r( libxml_get_errors(), true ) );
+		}
+		libxml_clear_errors();
+
+		return $html;
+	}
+
+	/**
+	 * Parse HTML snippet, save all found <img> tags using media_handle_sideload(), return the HTML with changed <img> paths.
+	 *
+	 * @param \DOMDocument $doc
+	 *
+	 * @return \DOMDocument
+	 */
+	protected function scrapeAndKneadImages( \DOMDocument $doc ) {
+
+		$images = $doc->getElementsByTagName( 'img' );
+
+		foreach ( $images as $image ) {
+			/** @var \DOMElement $image */
+			// Fetch image, change src
+			$old_src = $image->getAttribute( 'src' );
+			$new_src = $this->fetchAndSaveUniqueImage( $old_src );
+			if ( $new_src ) {
+				// Replace with new image
+				$image->setAttribute( 'src', $new_src );
+			} else {
+				// Tag broken image
+				$image->setAttribute( 'src', "{$old_src}#fixme" );
+			}
+		}
+
+		return $doc;
+	}
+
+	protected function fetchAndSaveUniqueImage( $img_id ) {
+		echo "<pre>";
+		print_r( get_defined_vars() );
+		echo "</pre>";
+		die();
 	}
 
 }
