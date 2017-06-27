@@ -425,6 +425,7 @@ class Cnx extends Import {
 		$mathml = preg_match( 'MathML', $xhtml_string );
 
 		if ( 1 === $mathml ) {
+			libxml_use_internal_errors( true ); // fetch error info
 
 			$filtered_content        = preg_replace( '/\$/', '&#128178;', $xhtml_string );
 			$doc                     = new \DOMDocument( '1.0', 'UTF-8' );
