@@ -75,7 +75,7 @@ class Cnx extends Import {
 		$valid_domain = wp_parse_url( $upload['url'] );
 
 		if ( 0 === strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 === strcmp( $valid_domain['scheme'], 'https' ) ) ) {
-			$tmp_file = download_url( $upload['url'], 300 );
+			$tmp_file = download_url( $upload['url'], 600 );
 
 			try {
 				$this->setValidZip( $tmp_file );
@@ -104,6 +104,51 @@ class Cnx extends Import {
 
 		}
 
+	}
+
+
+	/**
+	 * @param array $current_import
+	 *
+	 * @return bool
+	 */
+	function import( array $current_import ) {
+		// TODO: Implement import() method.
+		try {
+			$this->setValidZip( $current_import['download_url_file'] );
+			$collection_contents = $this->parseManifestContent();
+			$metadata            = $this->parseManifestMetadata();
+
+		} catch ( \Exception $e ) {
+			// delete the file before we go
+			unlink( $current_import['download_url_file'] );
+
+			return false;
+		}
+
+		$chapter_parent = $this->getChapterParent();
+
+		foreach ( $current_import['chapters'] as $id => $chapter_title ) {
+			if ( ! $this->flaggedForImport( $id ) ) {
+				continue;
+			}
+			try {
+				$html = $this->mathTransform( $id );
+			} catch ( \Exception $e ) {
+				// delete the file before we go
+				unlink( $current_import['download_url_file'] );
+
+			}
+			echo "<pre>";
+			print_r( $html );
+			echo "</pre>";
+			die();
+			//$this->kneadAndInsert( $html, $chapter_title, $this->determinePostType( $id ), $chapter_parent, $current_import['default_post_status'] );
+
+
+			// Done
+			return $this->revokeCurrentImport();
+		}
 	}
 
 	/**
@@ -193,7 +238,7 @@ class Cnx extends Import {
 		*/
 
 		$namespaces = $xml->getDocNamespaces();
-		$meta = $xml->metadata->children( $namespaces['md'] );
+		$meta       = $xml->metadata->children( $namespaces['md'] );
 
 		// authors
 		foreach ( $meta->actors->person as $author ) {
@@ -280,39 +325,6 @@ class Cnx extends Import {
 		return $book;
 	}
 
-	/**
-	 * @param array $current_import
-	 *
-	 * @return bool
-	 */
-	function import( array $current_import ) {
-		// TODO: Implement import() method.
-		try {
-			$this->setValidZip( $current_import['download_url_file'] );
-			$collection_contents = $this->parseManifestContent();
-			$metadata            = $this->parseManifestMetadata();
-
-		} catch ( \Exception $e ) {
-			// delete the file before we go
-			unlink( $current_import['download_url_file'] );
-
-			return false;
-		}
-
-		$match_ids      = array_flip( array_keys( $current_import['chapters'] ) );
-		$chapter_parent = $this->getChapterParent();
-
-		echo "<pre>";
-		print_r( $collection_contents );
-		print_r( $metadata );
-
-		echo "</pre>";
-		die();
-		echo "<pre>";
-		print_r( $current_import );
-		echo "</pre>";
-		die();
-	}
 
 	/**
 	 * Opens the zip file, set as an instance variable
@@ -350,7 +362,7 @@ class Cnx extends Import {
 	 * @param $file
 	 * @param bool $as_xml
 	 *
-	 * @return string|\SimpleXMLElement
+	 * @return boolean|\SimpleXMLElement
 	 */
 	protected function getZipContent( $file, $as_xml = true ) {
 
@@ -358,7 +370,7 @@ class Cnx extends Import {
 		$index = $this->zip->locateName( urldecode( $file ) );
 
 		if ( false === $index ) {
-			return '';
+			return false;
 		}
 
 		// returns the contents using its index
@@ -392,6 +404,86 @@ class Cnx extends Import {
 
 		return $option;
 
+	}
+
+	/**
+	 * Will apply xsl transformation if mathml detected
+	 *
+	 * @param $id
+	 *
+	 * @return mixed|string
+	 * @throws \Exception
+	 */
+	private function mathTransform( $id ) {
+
+		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
+
+		if ( false === $xhtml_string ) {
+			throw new \Exception( 'Required file index.cnxml.html could not be found' );
+		}
+
+		$mathml = preg_match( 'MathML', $xhtml_string );
+
+		if ( 1 === $mathml ) {
+
+			$filtered_content        = preg_replace( '/\$/', '&#128178;', $xhtml_string );
+			$doc                     = new \DOMDocument( '1.0', 'UTF-8' );
+			$doc->preserveWhiteSpace = false;
+			$doc->recover            = true; // try to parse non-well formed documents
+
+			// loadHTML does not work because mathml entities generate invalid entity errors
+			// load XML from a string
+			// Disable the ability to load external entities
+			$old_value = libxml_disable_entity_loader( true );
+			$doc->loadXML( $filtered_content, LIBXML_NOBLANKS | LIBXML_NONET | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING );
+			libxml_disable_entity_loader( $old_value );
+
+
+			// xsl
+			$xsl_dom = new \DOMDocument( '1.0', 'UTF-8' );
+			$xsl_dom->load( __DIR__ . '/xsl/mmltex.xsl' );
+
+			// configure the transformer
+			$proc = new \XSLTProcessor();
+			$proc->importStylesheet( $xsl_dom );
+
+			// Here's the transformation that needs to happen
+			$xml_string = $proc->transformToXml( $doc->documentElement );
+
+			$clean = $this->cleanHtml( $xml_string );
+			$html  = '[latexpage]' . $clean;
+			libxml_clear_errors();
+		} else {
+			$html = $this->cleanHtml( $xhtml_string );
+
+		}
+
+		return $html;
+	}
+
+	/**
+	 * @param $string
+	 *
+	 * @return mixed
+	 */
+	private function cleanHtml( $string ) {
+		// some tidying up
+		// @TODO more html tidying
+		$html_string = preg_replace( '/<\?xml[^>]*>\n/isU', '', $string );
+		// put a space between double dollar signs '$$'
+		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
+
+		$html_string = mb_convert_encoding( $html_string, 'HTML-ENTITIES', 'UTF-8' );
+
+		// latex written like \this needs to be protected by escaping with \\this
+		$html_string = addcslashes( $html_string, '\\' );
+		preg_match_all( '/(?:<body[^>]*>)(.*)<\/body>/isU', $html_string, $matches, PREG_PATTERN_ORDER );
+
+		return $matches[1][0];
+	}
+
+	protected function kneadAndInsert( $html, $title, $post_type, $chapter_parent, $post_status ) {
+		// @TODO implement methods
 	}
 
 }
