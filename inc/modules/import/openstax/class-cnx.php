@@ -15,7 +15,7 @@
 namespace BCcampus\Import\OpenStax;
 
 use \Pressbooks\Modules\Import\Import;
-
+use \Pressbooks\Book;
 
 class Cnx extends Import {
 
@@ -116,8 +116,7 @@ class Cnx extends Import {
 		// TODO: Implement import() method.
 		try {
 			$this->setValidZip( $current_import['download_url_file'] );
-			$collection_contents = $this->parseManifestContent();
-			$metadata            = $this->parseManifestMetadata();
+			$metadata = $this->parseManifestMetadata();
 
 		} catch ( \Exception $e ) {
 			// delete the file before we go
@@ -140,12 +139,13 @@ class Cnx extends Import {
 
 			}
 
-			$this->kneadAndInsert( $html, $chapter_title, $this->determinePostType( $id ), $chapter_parent, $current_import['default_post_status'] );
+			$this->kneadAndInsert( $html, $id, $chapter_title, $this->determinePostType( $id ), $chapter_parent, $current_import['default_post_status'] );
 
-
-			// Done
-			return $this->revokeCurrentImport();
 		}
+		// Done
+		unlink( $current_import['download_url_file'] );
+
+		return $this->revokeCurrentImport();
 	}
 
 	/**
@@ -193,6 +193,7 @@ class Cnx extends Import {
 			throw new \Exception( print_r( libxml_get_errors(), true ) );
 		}
 
+		libxml_clear_errors();
 		/*
 		|--------------------------------------------------------------------------
 		| Expected Metadata
@@ -322,6 +323,33 @@ class Cnx extends Import {
 		return $book;
 	}
 
+	/**
+	 * Locates an entry using its name, returns the entry contents
+	 *
+	 * @param $file
+	 * @param bool $as_xml
+	 *
+	 * @return boolean|\SimpleXMLElement
+	 */
+	protected function getZipContent( $file, $as_xml = true ) {
+
+		// Locates an entry using its name
+		$index = $this->zip->locateName( urldecode( $file ) );
+
+		if ( false === $index ) {
+			return false;
+		}
+
+		// returns the contents using its index
+		$content = $this->zip->getFromIndex( $index );
+
+		// if it's not xml, return
+		if ( ! $as_xml ) {
+			return $content;
+		}
+
+		return new \SimpleXMLElement( $content );
+	}
 
 	/**
 	 * Opens the zip file, set as an instance variable
@@ -351,34 +379,6 @@ class Cnx extends Import {
 			throw new \Exception( 'Bad or corrupted collection.xml' );
 		}
 
-	}
-
-	/**
-	 * Locates an entry using its name, returns the entry contents
-	 *
-	 * @param $file
-	 * @param bool $as_xml
-	 *
-	 * @return boolean|\SimpleXMLElement
-	 */
-	protected function getZipContent( $file, $as_xml = true ) {
-
-		// Locates an entry using its name
-		$index = $this->zip->locateName( urldecode( $file ) );
-
-		if ( false === $index ) {
-			return false;
-		}
-
-		// returns the contents using its index
-		$content = $this->zip->getFromIndex( $index );
-
-		// if it's not xml, return
-		if ( ! $as_xml ) {
-			return $content;
-		}
-
-		return new \SimpleXMLElement( $content );
 	}
 
 	/**
@@ -440,7 +440,7 @@ class Cnx extends Import {
 		libxml_clear_errors();
 
 		$math = $doc->getElementsByTagName( 'math' );
-		if ( $math ) {
+		if ( $math->length > 0 ) {
 			// xsl
 			$xsl_dom = new \DOMDocument( '1.0', 'UTF-8' );
 			$xsl_dom->load( __DIR__ . '/xsl/mmltex.xsl' );
@@ -476,7 +476,7 @@ class Cnx extends Import {
 		$html_string = mb_convert_encoding( $html_string, 'HTML-ENTITIES', 'UTF-8' );
 
 		// latex written like \this needs to be protected by escaping with \\this
-		$html_string = addcslashes( $html_string, '\\' );
+		//$html_string = addcslashes( $html_string, '\\' );
 
 		// just grab the body element
 		preg_match_all( '/(?:<body[^>]*>)(.*)<\/body>/isU', $html_string, $matches, PREG_PATTERN_ORDER );
@@ -484,11 +484,11 @@ class Cnx extends Import {
 		return $matches[1][0];
 	}
 
-	protected function kneadAndInsert( $html, $title, $post_type, $chapter_parent, $post_status ) {
+	protected function kneadAndInsert( $html, $id, $title, $post_type, $chapter_parent, $post_status ) {
 
 		$body = $this->tidy( $html );
 
-		$body = $this->kneadHtml( $body );
+		$body = $this->kneadHtml( $body, $id );
 
 		$title = wp_strip_all_tags( $title );
 
@@ -536,7 +536,7 @@ class Cnx extends Import {
 	 *
 	 * @return string
 	 */
-	protected function kneadHtml( $html ) {
+	protected function kneadHtml( $html, $id ) {
 		libxml_use_internal_errors( true );
 
 		// Load HTMl snippet into DOMDocument using UTF-8 hack
@@ -545,7 +545,7 @@ class Cnx extends Import {
 		$doc->loadHTML( $utf8_hack . $html );
 
 		// Change image paths
-		$doc = $this->scrapeAndKneadImages( $doc );
+		$doc = $this->scrapeAndKneadImages( $doc, $id );
 
 		// If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
 		// Ie. It will spit out the characters converted in encoded format. Instead do the following:
@@ -566,7 +566,7 @@ class Cnx extends Import {
 	 *
 	 * @return \DOMDocument
 	 */
-	protected function scrapeAndKneadImages( \DOMDocument $doc ) {
+	protected function scrapeAndKneadImages( \DOMDocument $doc, $id ) {
 
 		$images = $doc->getElementsByTagName( 'img' );
 
@@ -574,7 +574,7 @@ class Cnx extends Import {
 			/** @var \DOMElement $image */
 			// Fetch image, change src
 			$old_src = $image->getAttribute( 'src' );
-			$new_src = $this->fetchAndSaveUniqueImage( $old_src );
+			$new_src = $this->fetchAndSaveUniqueImage( $old_src, $id );
 			if ( $new_src ) {
 				// Replace with new image
 				$image->setAttribute( 'src', $new_src );
@@ -587,11 +587,70 @@ class Cnx extends Import {
 		return $doc;
 	}
 
-	protected function fetchAndSaveUniqueImage( $img_id ) {
-		echo "<pre>";
-		print_r( get_defined_vars() );
-		echo "</pre>";
-		die();
+	/**
+	 * @param $href
+	 * @param $id
+	 *
+	 * @return false|mixed|string
+	 */
+	protected function fetchAndSaveUniqueImage( $href, $id ) {
+		$img_location = $href;
+
+		// Cheap cache
+		static $already_done = [];
+		if ( isset( $already_done[ $img_location ] ) ) {
+			return $already_done[ $img_location ];
+		}
+
+		/* Process */
+
+		// Basename without query string
+		$filename = explode( '/', basename( $href ) );
+		$filename = array_shift( $filename );
+
+		$filename = sanitize_file_name( urldecode( $filename ) );
+
+		if ( ! preg_match( '/\.(jpe?g|gif|png)$/i', $filename ) ) {
+			// Unsupported image type
+			$already_done[ $img_location ] = '';
+
+			return '';
+		}
+
+		$image_content = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . $filename, false );
+		if ( ! $image_content ) {
+			$already_done[ $img_location ] = '';
+
+			return '';
+		}
+
+		$tmp_name = $this->createTmpFile();
+		file_put_contents( $tmp_name, $image_content );
+
+		if ( ! \Pressbooks\Image\is_valid_image( $tmp_name, $filename ) ) {
+
+			try { // changing the file name so that extension matches the mime type
+				$filename = $this->properImageExtension( $tmp_name, $filename );
+
+				if ( ! \Pressbooks\Image\is_valid_image( $tmp_name, $filename ) ) {
+					throw new \Exception( 'Image is corrupt, and file extension matches the mime type' );
+				}
+			} catch ( \Exception $exc ) {
+				// Garbage, Don't import
+				$already_done[ $img_location ] = '';
+
+				return '';
+			}
+		}
+
+		$pid = media_handle_sideload( [ 'name' => $filename, 'tmp_name' => $tmp_name ], 0 );
+		$src = wp_get_attachment_url( $pid );
+		if ( ! $src ) {
+			$src = ''; // Change false to empty string
+		}
+		$already_done[ $img_location ] = $src;
+
+		return $src;
 	}
 
 }
