@@ -23,3 +23,4 @@ Adds an option to the PressBooks import tool named `Zip (OpenStax zip file)`. Th
 1. Navigate to `tools -> Import` and select `Zip (OpenStax zip file)` from the dropdown menu 
 
 ## Screenshots ##
+![screenshot](/pb-os-import.png?raw=true "import screenshot")
