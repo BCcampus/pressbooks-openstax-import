@@ -105,7 +105,7 @@ add_filter( 'pb_import_file_types', 'poi_import_file_types' );
 /**
  * Verify WP QuickLaTeX is installed and active, notice goes away once activated or dismissed
  */
-function check_latex() {
+function poi_check_latex() {
 	$path = 'wp-quicklatex/wp-quicklatex.php';
 
 	$all_plugins = get_plugins();

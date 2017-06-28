@@ -36,10 +36,11 @@
 
     <xsl:strip-space elements="m:*"/>
 
+	<!-- Default inline shortcode \(...\) supported by wp-quick-latex -->
     <xsl:template match="m:math">
-        <xsl:text>&#x00024;</xsl:text>
+        <xsl:text>&#x0005C;&#x00028;</xsl:text>
         <xsl:apply-templates/>
-        <xsl:text>&#x00024;</xsl:text>
+        <xsl:text>&#x0005C;&#x00029;</xsl:text>
     </xsl:template>
 
     <!-- the identity template -->
@@ -48,13 +49,5 @@
             <xsl:apply-templates select="@*|node()"/>
         </xsl:copy>
     </xsl:template>
-
-    <!-- only here so we can add the shortcode for Quick Latex Plugin -->
-    <!--<xsl:template match="body">-->
-        <!--<xsl:copy>-->
-            <!--<span>[latexpage]</span>-->
-            <!--<xsl:apply-templates select="@*|node()"/>-->
-        <!--</xsl:copy>-->
-    <!--</xsl:template>-->
 
 </xsl:stylesheet>

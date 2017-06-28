@@ -30,6 +30,11 @@ class Cnx extends Import {
 	protected $baseDirectory;
 
 	/**
+	 * @var bool
+	 */
+	protected $quickLatex;
+
+	/**
 	 *
 	 */
 	function __construct() {
@@ -38,6 +43,8 @@ class Cnx extends Import {
 			require_once( ABSPATH . 'wp-admin/includes/file.php' );
 			require_once( ABSPATH . 'wp-admin/includes/media.php' );
 		}
+
+		$this->quickLatex = ( is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) ? true : false;
 
 		$this->zip = new \ZipArchive();
 	}
@@ -443,7 +450,14 @@ class Cnx extends Import {
 		if ( $math->length > 0 ) {
 			// xsl
 			$xsl_dom = new \DOMDocument( '1.0', 'UTF-8' );
-			$xsl_dom->load( __DIR__ . '/xsl/mmltex.xsl' );
+
+			if ( $this->quickLatex ) {
+				$xsl_dom->load( __DIR__ . '/xsl/mmlquicktex.xsl' );
+				$latex_page = '[latexpage]';
+			} else {
+				$xsl_dom->load( __DIR__ . '/xsl/mmlpbtex.xsl' );
+				$latex_page = '';
+			}
 
 			// configure the transformer
 			$proc = new \XSLTProcessor();
@@ -452,8 +466,8 @@ class Cnx extends Import {
 			// Here's the transformation that needs to happen
 			$xml_string = $proc->transformToXml( $doc->documentElement );
 
-			$clean = $this->cleanHtml( $xml_string );
-			$html  = '[latexpage]' . $clean;
+			$html = $latex_page . $this->cleanHtml( $xml_string );
+
 		} else {
 			$html = $this->cleanHtml( $xhtml_string );
 		}
@@ -470,13 +484,9 @@ class Cnx extends Import {
 		// some tidying up
 		// @TODO more html tidying
 		$html_string = preg_replace( '/<\?xml[^>]*>\n/isU', '', $string );
-		// put a space between double dollar signs '$$'
+
+		// put a space between any double dollar signs '$$' so it doesn't trigger a shortcode event
 		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
-
-		$html_string = mb_convert_encoding( $html_string, 'HTML-ENTITIES', 'UTF-8' );
-
-		// latex written like \this needs to be protected by escaping with \\this
-		//$html_string = addcslashes( $html_string, '\\' );
 
 		// just grab the body element
 		preg_match_all( '/(?:<body[^>]*>)(.*)<\/body>/isU', $html_string, $matches, PREG_PATTERN_ORDER );
@@ -493,11 +503,14 @@ class Cnx extends Import {
 		$title = wp_strip_all_tags( $title );
 
 		$new_post = [
-			'post_title'   => $title,
-			'post_content' => $body,
-			'post_type'    => $post_type,
-			'post_status'  => $post_status,
+			'post_title'  => $title,
+			'post_type'   => $post_type,
+			'post_status' => ( 'part' === $post_type ) ? 'publish' : $post_status,
 		];
+
+		if ( 'part' !== $post_type ) {
+			$new_post['post_content'] = $body;
+		}
 
 		if ( 'chapter' === $post_type ) {
 			$new_post['post_parent'] = $chapter_parent;
@@ -556,7 +569,8 @@ class Cnx extends Import {
 		}
 		libxml_clear_errors();
 
-		return $html;
+		// saveXML adds <html><body>elements, which we don't want
+		return $this->cleanHtml( $html );
 	}
 
 	/**
