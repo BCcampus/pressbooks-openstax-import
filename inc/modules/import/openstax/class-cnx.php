@@ -145,9 +145,19 @@ class Cnx extends Import {
 				unlink( $current_import['download_url_file'] );
 
 			}
+			$post_type = $this->determinePostType( $id );
+			$content   = $this->kneadHtml( $html, $id );
 
-			$this->kneadAndInsert( $html, $id, $chapter_title, $this->determinePostType( $id ), $chapter_parent, $current_import['default_post_status'] );
+			$pid = $this->insertNewPost( $content, $chapter_title, $post_type, $chapter_parent, $current_import['default_post_status'] );
 
+			if ( 'part' == $post_type ) {
+				$chapter_parent = $pid;
+			} else {
+				update_post_meta( $pid, 'pb_show_title', 'on' );
+				update_post_meta( $pid, 'pb_export', 'on' );
+			}
+			
+			Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
 		}
 		// Done
 		unlink( $current_import['download_url_file'] );
@@ -297,9 +307,12 @@ class Cnx extends Import {
 		|
 		|
 		*/
-		$namespaces = $xml->getDocNamespaces();
+		$namespaces     = $xml->getDocNamespaces();
+		$test_for_units = $xml->xpath( '/col:collection/col:content/col:subcollection/col:content/col:subcollection' );
+		$path           = ( empty( $test_for_units ) ) ? '/col:collection/col:content/col:subcollection' : '/col:collection/col:content/col:subcollection/col:content/col:subcollection';
 
-		foreach ( $xml->xpath( '/col:collection/col:content/col:subcollection' ) as $parts ) {
+
+		foreach ( $xml->xpath( $path ) as $parts ) {
 			$part     = $parts->children( $namespaces['md'] );
 			$contents = $parts->children( $namespaces['col'] );
 			$titles   = $parts->xpath( 'col:content/col:module/md:title' );
@@ -494,11 +507,16 @@ class Cnx extends Import {
 		return $matches[1][0];
 	}
 
-	protected function kneadAndInsert( $html, $id, $title, $post_type, $chapter_parent, $post_status ) {
 
-		$body = $this->tidy( $html );
-
-		$body = $this->kneadHtml( $body, $id );
+	/**
+	 *
+	 * @param $html
+	 * @param $title
+	 * @param $post_type
+	 * @param $chapter_parent
+	 * @param $post_status
+	 */
+	protected function insertNewPost( $html, $title, $post_type, $chapter_parent, $post_status ) {
 
 		$title = wp_strip_all_tags( $title );
 
@@ -509,7 +527,7 @@ class Cnx extends Import {
 		];
 
 		if ( 'part' !== $post_type ) {
-			$new_post['post_content'] = $body;
+			$new_post['post_content'] = $html;
 		}
 
 		if ( 'chapter' === $post_type ) {
@@ -518,10 +536,7 @@ class Cnx extends Import {
 
 		$pid = wp_insert_post( add_magic_quotes( $new_post ) );
 
-		update_post_meta( $pid, 'pb_show_title', 'on' );
-		update_post_meta( $pid, 'pb_export', 'on' );
-
-		Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
+		return $pid;
 	}
 
 	/**
@@ -550,6 +565,7 @@ class Cnx extends Import {
 	 * @return string
 	 */
 	protected function kneadHtml( $html, $id ) {
+		$html = $this->tidy( $html );
 		libxml_use_internal_errors( true );
 
 		// Load HTMl snippet into DOMDocument using UTF-8 hack
