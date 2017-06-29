@@ -145,7 +145,6 @@ class Cnx extends Import {
 				$html = $this->mathTransform( $id );
 
 			} catch ( \Exception $e ) {
-				// delete the file before we go
 				error_log( $e );
 			}
 
@@ -436,7 +435,10 @@ class Cnx extends Import {
 	 * @throws \Exception
 	 */
 	private function mathTransform( $id ) {
-
+		// parts have no content in this world
+		if ( is_int( $id ) ) {
+			return '';
+		}
 		// return string
 		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
 
@@ -484,7 +486,8 @@ class Cnx extends Import {
 			// Here's the transformation that needs to happen
 			$xml_string = $proc->transformToXml( $doc->documentElement );
 
-			$html = $this->cleanHtml( $xml_string );
+			// if the transform doesn't work, this gives them something, better than nothing
+			$html = ( false === $xml_string ) ? $this->cleanHtml( $xhtml_string ) : $this->cleanHtml( $xml_string );
 
 		} else {
 			$html = $this->cleanHtml( $xhtml_string );
@@ -502,8 +505,9 @@ class Cnx extends Import {
 		// some tidying up
 		$html_string = preg_replace( '/<\?xml[^>]*>\n/isU', '', $string );
 
-		$html_string = preg_replace( '/(?:<div[^>]data-type=\"abstract\">)/iU', '<div class="textbox learning-objectives">', $html_string );
+		$html_string = preg_replace( '/(?:<div[^>]data-type=\"abstract\">)/iU', '<div class="textbox learning-objectives"><h3 itemprop="educationalUse">Learning Objectives</h3>', $html_string );
 		$html_string = preg_replace( '/(?:<div[^>]data-type=\"document-title\">)(.*)<\/div>/isU', '', $html_string );
+		$html_string = preg_replace( '/(?:<h1[^>]data-type=\"title\">)(Key Concepts)<\/h1>/isU', '<h3 data-type="title">Key Concepts</h3>', $html_string );
 
 		// put a space between any double dollar signs '$$' so it doesn't trigger a shortcode event
 		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
@@ -577,6 +581,9 @@ class Cnx extends Import {
 	protected function kneadHtml( $content, $id ) {
 		libxml_use_internal_errors( true );
 
+		if ( empty( $content ) ) {
+			return '';
+		}
 		// Load HTMl snippet into DOMDocument using UTF-8 hack
 		$utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
 		$doc       = new \DOMDocument();
@@ -618,6 +625,48 @@ class Cnx extends Import {
 			}
 			foreach ( $remove as $delete ) {
 				$delete->parentNode->removeChild( $delete );
+			}
+		}
+
+		$div = $doc->getElementsByTagName( 'div' );
+
+		foreach ( $div as $element ) {
+			$att = $element->getAttribute( 'data-type' );
+			switch ( $att ) {
+				case 'example':
+					$new_att = 'textbox examples';
+					break;
+				case 'glossary':
+					$new_att = 'textbox shaded';
+					break;
+				default:
+					$new_att = '';
+					break;
+			}
+			if ( $new_att ) {
+				$element->setAttribute( 'class', $new_att );
+			}
+
+		}
+
+		$sections = $doc->getElementsByTagName( 'section' );
+
+		foreach ( $sections as $section ) {
+			$class = $section->getAttribute( 'class' );
+			switch ( $class ) {
+				case 'key-concepts':
+					$new_class = 'textbox key-takeaways';
+					break;
+				case 'section-exercises':
+					$new_class = 'textbox exercises';
+					// TODO add dom element <h3>Exercises</h3>
+					break;
+				default:
+					$new_class = '';
+					break;
+			}
+			if ( $new_class ) {
+				$section->setAttribute( 'class', $new_class );
 			}
 		}
 
@@ -690,7 +739,12 @@ class Cnx extends Import {
 		}
 
 		$tmp_name = $this->createTmpFile();
-		file_put_contents( $tmp_name, $image_content );
+
+		if ( is_null( $tmp_name ) ) {
+			$tmp_name = $this->baseDirectory . '/' . $id . '/' . $filename;
+		} else {
+			file_put_contents( $tmp_name, $image_content );
+		}
 
 		if ( ! \Pressbooks\Image\is_valid_image( $tmp_name, $filename ) ) {
 
@@ -714,6 +768,8 @@ class Cnx extends Import {
 			$src = ''; // Change false to empty string
 		}
 		$already_done[ $img_location ] = $src;
+
+		unlink( $tmp_name );
 
 		return $src;
 	}
