@@ -16,6 +16,7 @@ namespace BCcampus\Import\OpenStax;
 
 use \Pressbooks\Modules\Import\Import;
 use \Pressbooks\Book;
+use \Pressbooks \Metadata;
 
 class Cnx extends Import {
 
@@ -135,16 +136,19 @@ class Cnx extends Import {
 		$chapter_parent = $this->getChapterParent();
 
 		foreach ( $current_import['chapters'] as $id => $chapter_title ) {
+			$html = '';
 			if ( ! $this->flaggedForImport( $id ) ) {
 				continue;
 			}
+
 			try {
 				$html = $this->mathTransform( $id );
+
 			} catch ( \Exception $e ) {
 				// delete the file before we go
-				unlink( $current_import['download_url_file'] );
-
+				error_log( $e );
 			}
+
 			$post_type = $this->determinePostType( $id );
 			$content   = $this->kneadHtml( $html, $id );
 
@@ -156,7 +160,7 @@ class Cnx extends Import {
 				update_post_meta( $pid, 'pb_show_title', 'on' );
 				update_post_meta( $pid, 'pb_export', 'on' );
 			}
-			
+
 			Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
 		}
 		// Done
@@ -437,12 +441,15 @@ class Cnx extends Import {
 		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
 
 		if ( false === $xhtml_string ) {
-			throw new \Exception( 'Required file index.cnxml.html could not be found' );
+			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id );
 		}
 
 		libxml_use_internal_errors( true ); // fetch error info
 
-		$filtered_content        = preg_replace( '/\$/', '&#128178;', $xhtml_string );
+		$filtered_content = preg_replace( '/\$/', '&#128178;', $xhtml_string );
+		if ( empty( $filtered_content ) ) {
+			return '';
+		}
 		$doc                     = new \DOMDocument( '1.0', 'UTF-8' );
 		$doc->preserveWhiteSpace = false;
 		$doc->recover            = true; // try to parse non-well formed documents
@@ -466,10 +473,8 @@ class Cnx extends Import {
 
 			if ( $this->quickLatex ) {
 				$xsl_dom->load( __DIR__ . '/xsl/mmlquicktex.xsl' );
-				$latex_page = '[latexpage]';
 			} else {
 				$xsl_dom->load( __DIR__ . '/xsl/mmlpbtex.xsl' );
-				$latex_page = '';
 			}
 
 			// configure the transformer
@@ -479,7 +484,7 @@ class Cnx extends Import {
 			// Here's the transformation that needs to happen
 			$xml_string = $proc->transformToXml( $doc->documentElement );
 
-			$html = $latex_page . $this->cleanHtml( $xml_string );
+			$html = $this->cleanHtml( $xml_string );
 
 		} else {
 			$html = $this->cleanHtml( $xhtml_string );
@@ -495,8 +500,10 @@ class Cnx extends Import {
 	 */
 	private function cleanHtml( $string ) {
 		// some tidying up
-		// @TODO more html tidying
 		$html_string = preg_replace( '/<\?xml[^>]*>\n/isU', '', $string );
+
+		$html_string = preg_replace( '/(?:<div[^>]data-type=\"abstract\">)/iU', '<div class="textbox learning-objectives">', $html_string );
+		$html_string = preg_replace( '/(?:<div[^>]data-type=\"document-title\">)(.*)<\/div>/isU', '', $html_string );
 
 		// put a space between any double dollar signs '$$' so it doesn't trigger a shortcode event
 		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
@@ -504,21 +511,24 @@ class Cnx extends Import {
 		// just grab the body element
 		preg_match_all( '/(?:<body[^>]*>)(.*)<\/body>/isU', $html_string, $matches, PREG_PATTERN_ORDER );
 
-		return $matches[1][0];
+		$result = ( ! empty( $matches[1][0] ) ) ? $matches[1][0] : $html_string;
+
+		return $result;
 	}
 
-
 	/**
-	 *
 	 * @param $html
 	 * @param $title
 	 * @param $post_type
 	 * @param $chapter_parent
 	 * @param $post_status
+	 *
+	 * @return int|\WP_Error
 	 */
 	protected function insertNewPost( $html, $title, $post_type, $chapter_parent, $post_status ) {
 
-		$title = wp_strip_all_tags( $title );
+		$title      = wp_strip_all_tags( $title );
+		$latex_page = ( $this->quickLatex ) ? '[latexpage]' : '';
 
 		$new_post = [
 			'post_title'  => $title,
@@ -527,7 +537,7 @@ class Cnx extends Import {
 		];
 
 		if ( 'part' !== $post_type ) {
-			$new_post['post_content'] = $html;
+			$new_post['post_content'] = $latex_page . $html;
 		}
 
 		if ( 'chapter' === $post_type ) {
@@ -560,21 +570,21 @@ class Cnx extends Import {
 	}
 
 	/**
-	 * @param $html
+	 * @param $content
 	 *
 	 * @return string
 	 */
-	protected function kneadHtml( $html, $id ) {
-		$html = $this->tidy( $html );
+	protected function kneadHtml( $content, $id ) {
 		libxml_use_internal_errors( true );
 
 		// Load HTMl snippet into DOMDocument using UTF-8 hack
 		$utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
 		$doc       = new \DOMDocument();
-		$doc->loadHTML( $utf8_hack . $html );
+		$doc->loadHTML( $utf8_hack . $content );
 
 		// Change image paths
 		$doc = $this->scrapeAndKneadImages( $doc, $id );
+		$doc = $this->scrapeCnxCruft( $doc );
 
 		// If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
 		// Ie. It will spit out the characters converted in encoded format. Instead do the following:
@@ -585,8 +595,33 @@ class Cnx extends Import {
 		}
 		libxml_clear_errors();
 
+		$html = $this->tidy( $html );
+
 		// saveXML adds <html><body>elements, which we don't want
 		return $this->cleanHtml( $html );
+	}
+
+	/**
+	 * @param \DOMDocument $doc
+	 *
+	 * @return \DOMDocument
+	 */
+	protected function scrapeCnxCruft( \DOMDocument $doc ) {
+
+		$cnx = $doc->getElementsByTagName( 'cnx-pi' );
+
+		// foreach internal pointer get messed up
+		// two foreach statements necessary
+		if ( $cnx->length > 0 ) {
+			foreach ( $cnx as $cruft ) {
+				$remove[] = $cruft;
+			}
+			foreach ( $remove as $delete ) {
+				$delete->parentNode->removeChild( $delete );
+			}
+		}
+
+		return $doc;
 	}
 
 	/**

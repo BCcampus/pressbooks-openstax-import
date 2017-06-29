@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Presbooks OpenStax Import
  * Plugin URI:      PLUGIN SITE HERE
- * Description:     PLUGIN DESCRIPTION HERE
+ * Description:     OpentStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
  * Author:          Brad Payne, Alex Paredes
  * Author URI:      https://bradpayne.ca
  * Text Domain:     pressbooks-openstax-import
@@ -84,25 +84,6 @@ function poi_add_initialize_import() {
 add_filter( 'pb_initialize_import', 'poi_add_initialize_import' );
 
 /**
- * Associates a file type with a mimetype
- *
- * @param $allowed_file_types
- *
- * @return array
- */
-function poi_import_file_types( $allowed_file_types ) {
-
-	if ( is_array( $allowed_file_types ) && array_key_exists( 'pb_import_file_types', $allowed_file_types ) ) {
-		$allowed_file_types['pb_import_file_types']['zip'] = 'application/zip';
-	}
-
-	return $allowed_file_types;
-
-}
-
-add_filter( 'pb_import_file_types', 'poi_import_file_types' );
-
-/**
  * Verify WP QuickLaTeX is installed and active, notice goes away once activated or dismissed
  */
 function poi_check_latex() {
@@ -149,4 +130,4 @@ function poi_check_latex() {
 	}
 }
 
-add_action( 'admin_init', 'check_latex' );
+add_action( 'admin_init', 'poi_check_latex' );
