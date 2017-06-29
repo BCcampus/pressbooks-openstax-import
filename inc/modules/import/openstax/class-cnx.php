@@ -149,6 +149,7 @@ class Cnx extends Import {
 			}
 
 			$post_type = $this->determinePostType( $id );
+			$meta      = $this->getPostMeta( $html );
 			$content   = $this->kneadHtml( $html, $id );
 
 			$pid = $this->insertNewPost( $content, $chapter_title, $post_type, $chapter_parent, $current_import['default_post_status'] );
@@ -158,6 +159,8 @@ class Cnx extends Import {
 			} else {
 				update_post_meta( $pid, 'pb_show_title', 'on' );
 				update_post_meta( $pid, 'pb_export', 'on' );
+				update_post_meta( $pid, 'pb_section_license', $meta['license'] );
+				update_post_meta( $pid, 'pb_section_author', $meta['author'] );
 			}
 
 			Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
@@ -244,7 +247,6 @@ class Cnx extends Import {
 
 		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
 		$xml        = $this->safetyDance( $collection->asXML() );
-
 		/*
 		|--------------------------------------------------------------------------
 		| Metadata
@@ -273,12 +275,15 @@ class Cnx extends Import {
 			$subjects[] = (string) $item->subject;
 		}
 
+		// get the license in a pb suitable format
+		$pb_formatted_license = $this->extractLicense( (string) $meta->license->attributes()->url );
+
 		$metadata = [
 			'language'      => (string) $meta->language,
 			'title'         => (string) $meta->title,
 			'created'       => (string) $meta->created,
 			'revised'       => (string) $meta->revised,
-			'license'       => (string) $meta->license->attributes()->url,
+			'license'       => $pb_formatted_license,
 			'abstract'      => (string) $meta->abstract,
 			'keyword'       => (string) $meta->keywordlist->keyword,
 			'subject'       => $subjects,
@@ -487,10 +492,10 @@ class Cnx extends Import {
 			$xml_string = $proc->transformToXml( $doc->documentElement );
 
 			// if the transform doesn't work, this gives them something, better than nothing
-			$html = ( false === $xml_string ) ? $this->cleanHtml( $xhtml_string ) : $this->cleanHtml( $xml_string );
+			$html = ( false === $xml_string ) ? $xhtml_string : $xml_string;
 
 		} else {
-			$html = $this->cleanHtml( $xhtml_string );
+			$html = $xhtml_string;
 		}
 
 		return $html;
@@ -508,6 +513,7 @@ class Cnx extends Import {
 		$html_string = preg_replace( '/(?:<div[^>]data-type=\"abstract\">)/iU', '<div class="textbox learning-objectives"><h3 itemprop="educationalUse">Learning Objectives</h3>', $html_string );
 		$html_string = preg_replace( '/(?:<div[^>]data-type=\"document-title\">)(.*)<\/div>/isU', '', $html_string );
 		$html_string = preg_replace( '/(?:<h1[^>]data-type=\"title\">)(Key Concepts)<\/h1>/isU', '<h3 data-type="title">Key Concepts</h3>', $html_string );
+//		$html_string = preg_replace( '/(?:<meta[^>]*/>)/isU', '', $html_string );
 
 		// put a space between any double dollar signs '$$' so it doesn't trigger a shortcode event
 		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
@@ -769,9 +775,87 @@ class Cnx extends Import {
 		}
 		$already_done[ $img_location ] = $src;
 
-		unlink( $tmp_name );
-
 		return $src;
 	}
 
+
+	/**
+	 * Get existing Meta Post, if none exists create one
+	 *
+	 * attribution for this function belongs to Pressbooks
+	 * /inc/modules/import/wxr/class-wxr.php
+	 *
+	 * @return int Post ID
+	 */
+	protected function bookInfoPid() {
+
+		$post = ( new \Pressbooks\Metadata() )->getMetaPost();
+		if ( empty( $post->ID ) ) {
+			$new_post = [
+				'post_title'  => __( 'Book Info', 'pressbooks' ),
+				'post_type'   => 'metadata',
+				'post_status' => 'publish',
+			];
+			$pid      = wp_insert_post( add_magic_quotes( $new_post ) );
+		} else {
+			$pid = $post->ID;
+		}
+
+		return $pid;
+	}
+
+	/**
+	 * @param $uri
+	 *
+	 * @return string
+	 */
+	private function extractLicense( $uri ) {
+		if ( empty( $uri ) ) {
+			return '';
+		}
+		$val_in_pb = [ 'public-domain', 'cc-by', 'cc-by-sa', 'cc-by-nd', 'cc-by-nc', 'cc-by-nc-sa', 'cc-by-nc-nd' ];
+
+		$uri_parts = wp_parse_url( $uri );
+		if ( 'creativecommons.org' == $uri_parts['host'] ) {
+			$uri_path             = explode( '/', $uri_parts['path'] );
+			$formatted_license    = 'cc-' . $uri_path[2];
+			$pb_formatted_license = ( in_array( $formatted_license, $val_in_pb ) ) ? $formatted_license : '';
+		}
+
+		return $pb_formatted_license;
+	}
+
+	/**
+	 * @param $html
+	 *
+	 * @return string
+	 */
+	protected function getPostMeta( $html ) {
+		if ( empty( $html ) ) {
+			return '';
+		}
+		// Load HTMl snippet into DOMDocument using UTF-8 hack
+		$utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
+		$doc       = new \DOMDocument();
+		$doc->loadHTML( $utf8_hack . $html );
+
+		$meta = $doc->getElementsByTagName( 'meta' );
+		foreach ( $meta as $m ) {
+			$name = $m->getAttribute( 'name' );
+			switch ( $name ) {
+				case 'license':
+					$content['license'] = $m->getAttribute( 'content' );
+					break;
+				case 'author':
+					$content['author'] = $m->getAttribute( 'content' );
+					break;
+			}
+
+		}
+
+		$content['license'] = $this->extractLicense( $content['license'] );
+		unset( $doc );
+
+		return $content;
+	}
 }
