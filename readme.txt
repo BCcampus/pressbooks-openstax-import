@@ -1,114 +1,62 @@
 === Presbooks OpenStax Import ===
-Contributors: (this should be a list of wordpress.org userid's)
-Donate link: http://example.com/
-Tags: comments, spam
-Requires at least: 4.4
-Tested up to: 4.8
+Contributors: Brad Payne, Alex Paredes
+Tags: pressbooks, openstax, textbook, import
+Requires at least: 4.7.5
+Tested up to: 4.8.0
 Stable tag: 0.1.0
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+License: GPLv3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Here is a short description of the plugin.  This should be no more than 150 characters.  No markup here.
+A WordPress plugin that extends [Pressbooks](https://github.com/pressbooks/pressbooks) to let you import books from OpenStax.
 
 == Description ==
 
-This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
+Adds an option to the PressBooks import tool named `Zip (OpenStax zip file)`. This new option asks for a link of the OpenStax Zip file. (You can get the link from the downloads section of the OpenStax book you'd like to import.)
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+**Primary Use Case**
 
-A few notes about the sections above:
+This plugin was built primarily to support the creation, remixing, and distribution of open textbooks.
 
-*   "Contributors" is a comma separated list of wp.org/wp-plugins.org usernames
-*   "Tags" is a comma separated list of tags that apply to the plugin
-*   "Requires at least" is the lowest version that the plugin will work on
-*   "Tested up to" is the highest version that you've *successfully used to test the plugin*. Note that it might work on
-higher versions... this is just the highest one you've verified.
-*   Stable tag should indicate the Subversion "tag" of the latest stable version, or "trunk," if you use `/trunk/` for
-stable.
+**Development Sprint**
 
-    Note that the `readme.txt` of the stable tag is the one that is considered the defining one for the plugin, so
-if the `/trunk/readme.txt` file says that the stable tag is `4.3`, then it is `/tags/4.3/readme.txt` that'll be used
-for displaying information about the plugin.  In this situation, the only thing considered from the trunk `readme.txt`
-is the stable tag pointer.  Thus, if you develop in trunk, you can update the trunk `readme.txt` to reflect changes in
-your in-development version, without having that information incorrectly disclosed about the current stable version
-that lacks those changes -- as long as the trunk's `readme.txt` points to the correct stable tag.
-
-    If no stable tag is provided, it is assumed that trunk is stable, but you should specify "trunk" if that's where
-you put the stable version, in order to eliminate any doubt.
+The inspiration for this plugin came from wanting to improve our own process for bringing in OpenStax Textbooks;
+a laborious affair. In the fall of 2016 a Development Sprint was held in Houston at Rice University. One of the goals of the sprint
+was to be able to find a programmatic solution to the problem of converting equations during the import process. The XSL files
+by Vasil Yaroshevich are the key component used to convert equations to something that can be rendered in Pressbooks. While I was only able to
+attend the sprint for a couple days remotely, the hard work that other people put into that sprint contributed to this functionality.
 
 == Installation ==
 
-This section describes how to install the plugin and get it working.
+IMPORTANT!
 
-e.g.
+You must first install [Pressbooks](https://github.com/pressbooks/pressbooks). This plugin won't work without it.
+The Pressbooks github repository is updated frequently. [Stay up to date](https://github.com/pressbooks/pressbooks/tree/master).
 
-1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Place `<?php do_action('plugin_name_hook'); ?>` in your templates
+ALSO IMPORTANT!
+
+The value of this plugin is it's ability to transform MathML to LaTeX. Rendering that LaTeX in the browser
+requires a separate piece of functionality. The best results for rendering LaTeX equations in the browser is with
+[WP QuickLaTeX](https://wordpress.org/plugins/wp-quicklatex/). For best results, use that plugin. The built-in LaTeX rendering
+functionality in Pressbooks still works, but does not have as robust support for multi-line equations.
 
 == Frequently Asked Questions ==
 
-= A question that someone might have =
+**What is an Open Textbook?**
 
-An answer to that question.
+Open Textbooks are open educational resources (OER); they are instructional resources created and shared in ways so that more people have access to them.
+OER are defined as “teaching, learning, and research resources that reside in the public domain or have been released under an intellectual property license that permits their free use and re-purposing by others” (Hewlett Foundation).
 
-= What about foo bar? =
-
-Answer to foo bar dilemma.
-
-== Screenshots ==
-
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
 
 == Changelog ==
 
-= 1.0 =
-* A change since the previous version.
-* Another change.
+See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
 
-= 0.5 =
-* List versions from most recent at top to oldest at bottom.
+= 0.1.0-RC1 =
 
-== Upgrade Notice ==
+* Release Candidate
+* Will work with the latest development branch of Pressbooks
 
-= 1.0 =
-Upgrade notices describe the reason a user should upgrade.  No more than 300 characters.
 
-= 0.5 =
-This version fixes a security related bug.  Upgrade immediately.
 
-== Arbitrary section ==
 
-You may provide arbitrary sections, in the same format as the ones above.  This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation."  Arbitrary sections will be shown below the built-in sections outlined above.
 
-== A brief Markdown Example ==
-
-Ordered list:
-
-1. Some feature
-1. Another feature
-1. Something else about the plugin
-
-Unordered list:
-
-* something
-* something else
-* third thing
-
-Here's a link to [WordPress](http://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax].
-Titles are optional, naturally.
-
-[markdown syntax]: http://daringfireball.net/projects/markdown/syntax
-            "Markdown is what the parser uses to process much of the readme file"
-
-Markdown uses email style notation for blockquotes and I've been told:
-> Asterisks for *emphasis*. Double it up  for **strong**.
-
-`<?php code(); // goes in backticks ?>`
