@@ -40,23 +40,23 @@ requires a separate piece of functionality. The best results for rendering LaTeX
 [WP QuickLaTeX](https://wordpress.org/plugins/wp-quicklatex/). For best results, use that plugin. The built-in LaTeX rendering 
 functionality in Pressbooks still works, but does not have as robust support for multi-line equations. 
 
-= Using Git =
+## Using Git ##
 
 1. cd /wp-content/plugins 
 2. git clone https://github.com/BCcampus/pressbooks-openstax-import.git 
 3. Activate the plugin at the network level, through the 'Plugins' menu in WordPress
 4. Navigate to `tools -> Import` and select `Zip (OpenStax zip file)` from the dropdown menu 
 
-= OR, upload manually =
+## OR, upload manually ##
 
-1. Upload `pressbooks-openstax-import` to the `/wp-content/plugins/` directory
+1. Unzip and Upload the latest release of `pressbooks-openstax-import` to the `/wp-content/plugins/` directory
 2. Activate the plugin at the network level, through the 'Plugins' menu in WordPress
 3. Navigate to `tools -> Import` and select `Zip (OpenStax zip file)` from the dropdown menu 
 
-= Developers =
+## Developers ##
 1. cd /wp-content/plugins 
 2. git clone https://github.com/BCcampus/pressbooks-openstax-import.git 
-3. Run `composer install` in this plugins directory to install dependencies
+3. Run `composer install --dev` in this plugins directory to install dependencies
 4. Optional: install and network activate [WP QuickLaTeX](https://wordpress.org/plugins/wp-quicklatex/) to enable suport for multi-line math formulas and svg image export. 
 5. Network Activate pressbooks-openstax-import through the 'Plugins' menu in PressBooks
 6. Navigate to `tools -> Import` and select `Zip (OpenStax zip file)` from the dropdown menu 
