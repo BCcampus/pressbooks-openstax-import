@@ -134,6 +134,8 @@ class Cnx extends Import {
 		}
 
 		$chapter_parent = $this->getChapterParent();
+		$meta_pid       = $this->bookInfoPid();
+		$this->importMetaBoxes( $meta_pid, $metadata );
 
 		foreach ( $current_import['chapters'] as $id => $chapter_title ) {
 			$html = '';
@@ -270,25 +272,35 @@ class Cnx extends Import {
 			$organizations[] = (string) $org->fullname;
 		}
 
+		// author, licensor, maintainer
+		foreach ( $meta->roles->role as $type ) {
+			$role[ (string) $type->attributes()->type[0] ] = (string) $type;
+		}
 		// subjects
 		foreach ( $meta->subjectlist as $item ) {
 			$subjects[] = (string) $item->subject;
 		}
 
+		$date             = (string) $meta->created;
+		$pub_date         = explode( ' ', $date );
+		$publication_date = strtotime( $pub_date[0] );
+
 		// get the license in a pb suitable format
 		$pb_formatted_license = $this->extractLicense( (string) $meta->license->attributes()->url );
 
 		$metadata = [
-			'language'      => (string) $meta->language,
-			'title'         => (string) $meta->title,
-			'created'       => (string) $meta->created,
-			'revised'       => (string) $meta->revised,
-			'license'       => $pb_formatted_license,
-			'abstract'      => (string) $meta->abstract,
-			'keyword'       => (string) $meta->keywordlist->keyword,
-			'subject'       => $subjects,
-			'authors'       => $authors,
-			'organizations' => $organizations,
+			'pb_language'             => (string) $meta->language,
+			'pb_title'                => (string) $meta->title,
+			'pb_publication_date'     => $publication_date,
+			'revised'                 => (string) $meta->revised,
+			'pb_book_license'         => $pb_formatted_license,
+			'pb_about_50'             => (string) $meta->abstract,
+			'pb_keywords_tags'        => (string) $meta->keywordlist->keyword,
+			'pb_author'               => $role['author'],
+			'pb_copyright_holder'     => $role['licensor'],
+			'pb_bisac_subject'        => $subjects,
+			'pb_contributing_authors' => $authors,
+			'organizations'           => $organizations,
 		];
 
 		return $metadata;
@@ -511,9 +523,7 @@ class Cnx extends Import {
 		$html_string = preg_replace( '/<\?xml[^>]*>\n/isU', '', $string );
 
 		$html_string = preg_replace( '/(?:<div[^>]data-type=\"abstract\">)/iU', '<div class="textbox learning-objectives"><h3 itemprop="educationalUse">Learning Objectives</h3>', $html_string );
-		$html_string = preg_replace( '/(?:<div[^>]data-type=\"document-title\">)(.*)<\/div>/isU', '', $html_string );
 		$html_string = preg_replace( '/(?:<h1[^>]data-type=\"title\">)(Key Concepts)<\/h1>/isU', '<h3 data-type="title">Key Concepts</h3>', $html_string );
-//		$html_string = preg_replace( '/(?:<meta[^>]*/>)/isU', '', $html_string );
 
 		// put a space between any double dollar signs '$$' so it doesn't trigger a shortcode event
 		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
@@ -597,6 +607,7 @@ class Cnx extends Import {
 
 		// Change image paths
 		$doc = $this->scrapeAndKneadImages( $doc, $id );
+		// Modify class styles to match PB, get rid of unnecessary content
 		$doc = $this->scrapeCnxCruft( $doc );
 
 		// If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
@@ -608,10 +619,10 @@ class Cnx extends Import {
 		}
 		libxml_clear_errors();
 
-		$html = $this->tidy( $html );
+		$html = $this->cleanHtml( $html );
 
 		// saveXML adds <html><body>elements, which we don't want
-		return $this->cleanHtml( $html );
+		return $this->tidy( $html );
 	}
 
 	/**
@@ -634,9 +645,17 @@ class Cnx extends Import {
 			}
 		}
 
-		$div = $doc->getElementsByTagName( 'div' );
+		// foreach internal pointer get messed up
+		// two foreach statements necessary
+		$divs = $doc->getElementsByTagName( 'div' );
 
-		foreach ( $div as $element ) {
+		if ( $divs->length > 0 ) {
+			foreach ( $divs as $div ) {
+				$elements[] = $div;
+			}
+		}
+
+		foreach ( $elements as $element ) {
 			$att = $element->getAttribute( 'data-type' );
 			switch ( $att ) {
 				case 'example':
@@ -644,6 +663,10 @@ class Cnx extends Import {
 					break;
 				case 'glossary':
 					$new_att = 'textbox shaded';
+					break;
+				case 'document-title':
+					$element->parentNode->removeChild( $element );
+					$new_att = '';
 					break;
 				default:
 					$new_att = '';
@@ -769,7 +792,17 @@ class Cnx extends Import {
 		}
 
 		$pid = media_handle_sideload( [ 'name' => $filename, 'tmp_name' => $tmp_name ], 0 );
+
+		if ( is_wp_error( $pid ) ) {
+			$error_message = $pid->get_error_message();
+			error_log( '\Pressbooks\Modules\Import\OpenStax\Cnx::fetchAndSaveUniqueImage error, media_handle_sideload ' . $filename . $error_message );
+			$already_done[ $img_location ] = '';
+
+			return '';
+
+		}
 		$src = wp_get_attachment_url( $pid );
+
 		if ( ! $src ) {
 			$src = ''; // Change false to empty string
 		}
@@ -802,6 +835,51 @@ class Cnx extends Import {
 		}
 
 		return $pid;
+	}
+
+	/**
+	 * @see \Pressbooks\Admin\Metaboxes\add_meta_boxes
+	 *
+	 * @param int $pid Post ID
+	 * @param array $p Single Item Returned From \Pressbooks\Modules\Import\WordPress\Parser::parse
+	 */
+	protected function importMetaBoxes( $pid, $meta ) {
+
+		// List of meta data keys that can support multiple values:
+		$multiple = [
+			'pb_contributing_authors' => true,
+			'pb_keywords_tags'        => true,
+			'pb_bisac_subject'        => true,
+		];
+
+		// Clear old meta boxes
+		$metadata = get_post_meta( $pid );
+		foreach ( $metadata as $key => $val ) {
+			// Does key start with pb_ prefix?
+			if ( 0 === strpos( $key, 'pb_' ) ) {
+				delete_post_meta( $pid, $key );
+			}
+		}
+
+		// Import post meta
+		foreach ( $meta as $k => $v ) {
+			if ( 0 === strpos( $k, 'pb_' ) ) {
+				if ( isset( $multiple[ $k ] ) && is_array( $v ) ) {
+					// Multi value
+					$i     = 0;
+					$limit = count( $v );
+					do {
+						add_post_meta( $pid, $k, $v[ $i ] );
+						$i ++;
+					} while ( $i < $limit );
+				} else {
+					// Single value
+					if ( ! add_post_meta( $pid, $k, $v, true ) ) {
+						update_post_meta( $pid, $k, $v );
+					}
+				}
+			}
+		}
 	}
 
 	/**
