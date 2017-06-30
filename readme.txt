@@ -54,7 +54,7 @@ See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more
 = 0.1.0-RC1 =
 
 * Release Candidate
-* Will work with the latest development branch of Pressbooks
+* Will work with the latest development branch of Pressbooks and as yet-to-be released 4.0.0
 
 
 
