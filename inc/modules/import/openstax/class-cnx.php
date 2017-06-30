@@ -840,6 +840,9 @@ class Cnx extends Import {
 	/**
 	 * @see \Pressbooks\Admin\Metaboxes\add_meta_boxes
 	 *
+	 * modified from original, though attribution for original function belongs to Pressbooks
+	 * /inc/modules/import/wxr/class-wxr.php
+	 *
 	 * @param int $pid Post ID
 	 * @param array $p Single Item Returned From \Pressbooks\Modules\Import\WordPress\Parser::parse
 	 */
