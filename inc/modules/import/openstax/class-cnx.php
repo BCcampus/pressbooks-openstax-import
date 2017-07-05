@@ -15,7 +15,8 @@
 namespace BCcampus\Import\OpenStax;
 
 use \Pressbooks\Modules\Import\Import;
-
+use \Pressbooks\Book;
+use \Pressbooks \Metadata;
 
 class Cnx extends Import {
 
@@ -30,6 +31,11 @@ class Cnx extends Import {
 	protected $baseDirectory;
 
 	/**
+	 * @var bool
+	 */
+	protected $quickLatex;
+
+	/**
 	 *
 	 */
 	function __construct() {
@@ -38,6 +44,8 @@ class Cnx extends Import {
 			require_once( ABSPATH . 'wp-admin/includes/file.php' );
 			require_once( ABSPATH . 'wp-admin/includes/media.php' );
 		}
+
+		$this->quickLatex = ( is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) ? true : false;
 
 		$this->zip = new \ZipArchive();
 	}
@@ -75,7 +83,7 @@ class Cnx extends Import {
 		$valid_domain = wp_parse_url( $upload['url'] );
 
 		if ( 0 === strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 === strcmp( $valid_domain['scheme'], 'https' ) ) ) {
-			$tmp_file = download_url( $upload['url'], 300 );
+			$tmp_file = download_url( $upload['url'], 600 );
 
 			try {
 				$this->setValidZip( $tmp_file );
@@ -104,6 +112,65 @@ class Cnx extends Import {
 
 		}
 
+	}
+
+
+	/**
+	 * @param array $current_import
+	 *
+	 * @return bool
+	 */
+	function import( array $current_import ) {
+		// TODO: Implement import() method.
+		try {
+			$this->setValidZip( $current_import['download_url_file'] );
+			$metadata = $this->parseManifestMetadata();
+
+		} catch ( \Exception $e ) {
+			// delete the file before we go
+			unlink( $current_import['download_url_file'] );
+
+			return false;
+		}
+
+		$chapter_parent = $this->getChapterParent();
+		$meta_pid       = $this->bookInfoPid();
+		$this->importMetaBoxes( $meta_pid, $metadata );
+
+		foreach ( $current_import['chapters'] as $id => $chapter_title ) {
+			$html = '';
+			if ( ! $this->flaggedForImport( $id ) ) {
+				continue;
+			}
+
+			try {
+				$html = $this->mathTransform( $id );
+
+			} catch ( \Exception $e ) {
+				error_log( $e );
+			}
+
+			$post_type = $this->determinePostType( $id );
+			$meta      = $this->getPostMeta( $html );
+			$content   = $this->kneadHtml( $html, $id );
+
+			$pid = $this->insertNewPost( $content, $chapter_title, $post_type, $chapter_parent, $current_import['default_post_status'] );
+
+			if ( 'part' == $post_type ) {
+				$chapter_parent = $pid;
+			} else {
+				update_post_meta( $pid, 'pb_show_title', 'on' );
+				update_post_meta( $pid, 'pb_export', 'on' );
+				update_post_meta( $pid, 'pb_section_license', $meta['license'] );
+				update_post_meta( $pid, 'pb_section_author', $meta['author'] );
+			}
+
+			Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
+		}
+		// Done
+		unlink( $current_import['download_url_file'] );
+
+		return $this->revokeCurrentImport();
 	}
 
 	/**
@@ -151,6 +218,7 @@ class Cnx extends Import {
 			throw new \Exception( print_r( libxml_get_errors(), true ) );
 		}
 
+		libxml_clear_errors();
 		/*
 		|--------------------------------------------------------------------------
 		| Expected Metadata
@@ -181,7 +249,6 @@ class Cnx extends Import {
 
 		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
 		$xml        = $this->safetyDance( $collection->asXML() );
-
 		/*
 		|--------------------------------------------------------------------------
 		| Metadata
@@ -193,7 +260,7 @@ class Cnx extends Import {
 		*/
 
 		$namespaces = $xml->getDocNamespaces();
-		$meta = $xml->metadata->children( $namespaces['md'] );
+		$meta       = $xml->metadata->children( $namespaces['md'] );
 
 		// authors
 		foreach ( $meta->actors->person as $author ) {
@@ -205,22 +272,35 @@ class Cnx extends Import {
 			$organizations[] = (string) $org->fullname;
 		}
 
+		// author, licensor, maintainer
+		foreach ( $meta->roles->role as $type ) {
+			$role[ (string) $type->attributes()->type[0] ] = (string) $type;
+		}
 		// subjects
 		foreach ( $meta->subjectlist as $item ) {
 			$subjects[] = (string) $item->subject;
 		}
 
+		$date             = (string) $meta->created;
+		$pub_date         = explode( ' ', $date );
+		$publication_date = strtotime( $pub_date[0] );
+
+		// get the license in a pb suitable format
+		$pb_formatted_license = $this->extractLicense( (string) $meta->license->attributes()->url );
+
 		$metadata = [
-			'language'      => (string) $meta->language,
-			'title'         => (string) $meta->title,
-			'created'       => (string) $meta->created,
-			'revised'       => (string) $meta->revised,
-			'license'       => (string) $meta->license->attributes()->url,
-			'abstract'      => (string) $meta->abstract,
-			'keyword'       => (string) $meta->keywordlist->keyword,
-			'subject'       => $subjects,
-			'authors'       => $authors,
-			'organizations' => $organizations,
+			'pb_language'             => (string) $meta->language,
+			'pb_title'                => (string) $meta->title,
+			'pb_publication_date'     => $publication_date,
+			'revised'                 => (string) $meta->revised,
+			'pb_book_license'         => $pb_formatted_license,
+			'pb_about_50'             => (string) $meta->abstract,
+			'pb_keywords_tags'        => (string) $meta->keywordlist->keyword,
+			'pb_author'               => $role['author'],
+			'pb_copyright_holder'     => $role['licensor'],
+			'pb_bisac_subject'        => $subjects,
+			'pb_contributing_authors' => $authors,
+			'organizations'           => $organizations,
 		];
 
 		return $metadata;
@@ -247,9 +327,12 @@ class Cnx extends Import {
 		|
 		|
 		*/
-		$namespaces = $xml->getDocNamespaces();
+		$namespaces     = $xml->getDocNamespaces();
+		$test_for_units = $xml->xpath( '/col:collection/col:content/col:subcollection/col:content/col:subcollection' );
+		$path           = ( empty( $test_for_units ) ) ? '/col:collection/col:content/col:subcollection' : '/col:collection/col:content/col:subcollection/col:content/col:subcollection';
 
-		foreach ( $xml->xpath( '/col:collection/col:content/col:subcollection' ) as $parts ) {
+
+		foreach ( $xml->xpath( $path ) as $parts ) {
 			$part     = $parts->children( $namespaces['md'] );
 			$contents = $parts->children( $namespaces['col'] );
 			$titles   = $parts->xpath( 'col:content/col:module/md:title' );
@@ -281,37 +364,31 @@ class Cnx extends Import {
 	}
 
 	/**
-	 * @param array $current_import
+	 * Locates an entry using its name, returns the entry contents
 	 *
-	 * @return bool
+	 * @param $file
+	 * @param bool $as_xml
+	 *
+	 * @return boolean|\SimpleXMLElement
 	 */
-	function import( array $current_import ) {
-		// TODO: Implement import() method.
-		try {
-			$this->setValidZip( $current_import['download_url_file'] );
-			$collection_contents = $this->parseManifestContent();
-			$metadata            = $this->parseManifestMetadata();
+	protected function getZipContent( $file, $as_xml = true ) {
 
-		} catch ( \Exception $e ) {
-			// delete the file before we go
-			unlink( $current_import['download_url_file'] );
+		// Locates an entry using its name
+		$index = $this->zip->locateName( urldecode( $file ) );
 
+		if ( false === $index ) {
 			return false;
 		}
 
-		$match_ids      = array_flip( array_keys( $current_import['chapters'] ) );
-		$chapter_parent = $this->getChapterParent();
+		// returns the contents using its index
+		$content = $this->zip->getFromIndex( $index );
 
-		echo "<pre>";
-		print_r( $collection_contents );
-		print_r( $metadata );
+		// if it's not xml, return
+		if ( ! $as_xml ) {
+			return $content;
+		}
 
-		echo "</pre>";
-		die();
-		echo "<pre>";
-		print_r( $current_import );
-		echo "</pre>";
-		die();
+		return new \SimpleXMLElement( $content );
 	}
 
 	/**
@@ -345,34 +422,6 @@ class Cnx extends Import {
 	}
 
 	/**
-	 * Locates an entry using its name, returns the entry contents
-	 *
-	 * @param $file
-	 * @param bool $as_xml
-	 *
-	 * @return string|\SimpleXMLElement
-	 */
-	protected function getZipContent( $file, $as_xml = true ) {
-
-		// Locates an entry using its name
-		$index = $this->zip->locateName( urldecode( $file ) );
-
-		if ( false === $index ) {
-			return '';
-		}
-
-		// returns the contents using its index
-		$content = $this->zip->getFromIndex( $index );
-
-		// if it's not xml, return
-		if ( ! $as_xml ) {
-			return $content;
-		}
-
-		return new \SimpleXMLElement( $content );
-	}
-
-	/**
 	 * Adjust the array to format we need for wp_options
 	 *
 	 * @param $collection_contents
@@ -394,4 +443,500 @@ class Cnx extends Import {
 
 	}
 
+	/**
+	 * Will apply xsl transformation if mathml detected
+	 *
+	 * @param $id
+	 *
+	 * @return mixed|string
+	 * @throws \Exception
+	 */
+	private function mathTransform( $id ) {
+		// parts have no content in this world
+		if ( is_int( $id ) ) {
+			return '';
+		}
+		// return string
+		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
+
+		if ( false === $xhtml_string ) {
+			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id );
+		}
+
+		libxml_use_internal_errors( true ); // fetch error info
+
+		$filtered_content = preg_replace( '/\$/', '&#128178;', $xhtml_string );
+		if ( empty( $filtered_content ) ) {
+			return '';
+		}
+		$doc                     = new \DOMDocument( '1.0', 'UTF-8' );
+		$doc->preserveWhiteSpace = false;
+		$doc->recover            = true; // try to parse non-well formed documents
+
+		// loadHTML does not work because mathml entities generate invalid entity errors
+		// load XML from a string
+		// Disable the ability to load external entities
+		$old_value = libxml_disable_entity_loader( true );
+		$ok        = $doc->loadXML( $filtered_content, LIBXML_NOBLANKS | LIBXML_NONET | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING );
+		libxml_disable_entity_loader( $old_value );
+
+		if ( ! $ok ) {
+			error_log( print_r( libxml_get_errors(), true ) );
+		}
+		libxml_clear_errors();
+
+		$math = $doc->getElementsByTagName( 'math' );
+		if ( $math->length > 0 ) {
+			// xsl
+			$xsl_dom = new \DOMDocument( '1.0', 'UTF-8' );
+
+			if ( $this->quickLatex ) {
+				$xsl_dom->load( __DIR__ . '/xsl/mmlquicktex.xsl' );
+			} else {
+				$xsl_dom->load( __DIR__ . '/xsl/mmlpbtex.xsl' );
+			}
+
+			// configure the transformer
+			$proc = new \XSLTProcessor();
+			$proc->importStylesheet( $xsl_dom );
+
+			// Here's the transformation that needs to happen
+			$xml_string = $proc->transformToXml( $doc->documentElement );
+
+			// if the transform doesn't work, this gives them something, better than nothing
+			$html = ( false === $xml_string ) ? $xhtml_string : $xml_string;
+
+		} else {
+			$html = $xhtml_string;
+		}
+
+		return $html;
+	}
+
+	/**
+	 * @param $string
+	 *
+	 * @return mixed
+	 */
+	private function cleanHtml( $string ) {
+		// some tidying up
+		$html_string = preg_replace( '/<\?xml[^>]*>\n/isU', '', $string );
+
+		$html_string = preg_replace( '/(?:<div[^>]data-type=\"abstract\">)/iU', '<div class="textbox learning-objectives"><h3 itemprop="educationalUse">Learning Objectives</h3>', $html_string );
+		$html_string = preg_replace( '/(?:<h1[^>]data-type=\"title\">)(Key Concepts)<\/h1>/isU', '<h3 data-type="title">Key Concepts</h3>', $html_string );
+
+		// put a space between any double dollar signs '$$' so it doesn't trigger a shortcode event
+		$html_string = preg_replace( '/\${2}/U', '$ $', $html_string );
+
+		// just grab the body element
+		preg_match_all( '/(?:<body[^>]*>)(.*)<\/body>/isU', $html_string, $matches, PREG_PATTERN_ORDER );
+
+		$result = ( ! empty( $matches[1][0] ) ) ? $matches[1][0] : $html_string;
+
+		return $result;
+	}
+
+	/**
+	 * @param $html
+	 * @param $title
+	 * @param $post_type
+	 * @param $chapter_parent
+	 * @param $post_status
+	 *
+	 * @return int|\WP_Error
+	 */
+	protected function insertNewPost( $html, $title, $post_type, $chapter_parent, $post_status ) {
+
+		$title      = wp_strip_all_tags( $title );
+		$latex_page = ( $this->quickLatex ) ? '[latexpage]' : '';
+
+		$new_post = [
+			'post_title'  => $title,
+			'post_type'   => $post_type,
+			'post_status' => ( 'part' === $post_type ) ? 'publish' : $post_status,
+		];
+
+		if ( 'part' !== $post_type ) {
+			$new_post['post_content'] = $latex_page . $html;
+		}
+
+		if ( 'chapter' === $post_type ) {
+			$new_post['post_parent'] = $chapter_parent;
+		}
+
+		$pid = wp_insert_post( add_magic_quotes( $new_post ) );
+
+		return $pid;
+	}
+
+	/**
+	 * @param string $html
+	 *
+	 * @return string
+	 */
+	protected function tidy( $html ) {
+
+		// Reduce the vulnerability for scripting attacks
+		// Make XHTML 1.1 strict using htmlLawed
+
+		$config = [
+			'safe'               => 1,
+			'valid_xhtml'        => 1,
+			'no_deprecated_attr' => 2,
+			'hook'               => '\Pressbooks\Sanitize\html5_to_xhtml11',
+		];
+
+		return \Pressbooks\HtmLawed::filter( $html, $config );
+	}
+
+	/**
+	 * @param $content
+	 *
+	 * @return string
+	 */
+	protected function kneadHtml( $content, $id ) {
+		libxml_use_internal_errors( true );
+
+		if ( empty( $content ) ) {
+			return '';
+		}
+		// Load HTMl snippet into DOMDocument using UTF-8 hack
+		$utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
+		$doc       = new \DOMDocument();
+		$doc->loadHTML( $utf8_hack . $content );
+
+		// Change image paths
+		$doc = $this->scrapeAndKneadImages( $doc, $id );
+		// Modify class styles to match PB, get rid of unnecessary content
+		$doc = $this->scrapeCnxCruft( $doc );
+
+		// If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
+		// Ie. It will spit out the characters converted in encoded format. Instead do the following:
+		$html = $doc->saveXML( $doc->documentElement );
+
+		if ( ! $html ) {
+			error_log( print_r( libxml_get_errors(), true ) );
+		}
+		libxml_clear_errors();
+
+		$html = $this->cleanHtml( $html );
+
+		// saveXML adds <html><body>elements, which we don't want
+		return $this->tidy( $html );
+	}
+
+	/**
+	 * @param \DOMDocument $doc
+	 *
+	 * @return \DOMDocument
+	 */
+	protected function scrapeCnxCruft( \DOMDocument $doc ) {
+
+		$cnx = $doc->getElementsByTagName( 'cnx-pi' );
+
+		// foreach internal pointer get messed up
+		// two foreach statements necessary
+		if ( $cnx->length > 0 ) {
+			foreach ( $cnx as $cruft ) {
+				$remove[] = $cruft;
+			}
+			foreach ( $remove as $delete ) {
+				$delete->parentNode->removeChild( $delete );
+			}
+		}
+
+		// foreach internal pointer get messed up
+		// two foreach statements necessary
+		$divs = $doc->getElementsByTagName( 'div' );
+
+		if ( $divs->length > 0 ) {
+			foreach ( $divs as $div ) {
+				$elements[] = $div;
+			}
+		}
+
+		foreach ( $elements as $element ) {
+			$att = $element->getAttribute( 'data-type' );
+			switch ( $att ) {
+				case 'example':
+					$new_att = 'textbox examples';
+					break;
+				case 'glossary':
+					$new_att = 'textbox shaded';
+					break;
+				case 'document-title':
+					$element->parentNode->removeChild( $element );
+					$new_att = '';
+					break;
+				default:
+					$new_att = '';
+					break;
+			}
+			if ( $new_att ) {
+				$element->setAttribute( 'class', $new_att );
+			}
+
+		}
+
+		$sections = $doc->getElementsByTagName( 'section' );
+
+		foreach ( $sections as $section ) {
+			$class = $section->getAttribute( 'class' );
+			switch ( $class ) {
+				case 'key-concepts':
+					$new_class = 'textbox key-takeaways';
+					break;
+				case 'section-exercises':
+					$new_class = 'textbox exercises';
+					// TODO add dom element <h3>Exercises</h3>
+					break;
+				default:
+					$new_class = '';
+					break;
+			}
+			if ( $new_class ) {
+				$section->setAttribute( 'class', $new_class );
+			}
+		}
+
+		return $doc;
+	}
+
+	/**
+	 * Parse HTML snippet, save all found <img> tags using media_handle_sideload(), return the HTML with changed <img> paths.
+	 *
+	 * @param \DOMDocument $doc
+	 *
+	 * @return \DOMDocument
+	 */
+	protected function scrapeAndKneadImages( \DOMDocument $doc, $id ) {
+
+		$images = $doc->getElementsByTagName( 'img' );
+
+		foreach ( $images as $image ) {
+			/** @var \DOMElement $image */
+			// Fetch image, change src
+			$old_src = $image->getAttribute( 'src' );
+			$new_src = $this->fetchAndSaveUniqueImage( $old_src, $id );
+			if ( $new_src ) {
+				// Replace with new image
+				$image->setAttribute( 'src', $new_src );
+			} else {
+				// Tag broken image
+				$image->setAttribute( 'src', "{$old_src}#fixme" );
+			}
+		}
+
+		return $doc;
+	}
+
+	/**
+	 * @param $href
+	 * @param $id
+	 *
+	 * @return false|mixed|string
+	 */
+	protected function fetchAndSaveUniqueImage( $href, $id ) {
+		$img_location = $href;
+
+		// Cheap cache
+		static $already_done = [];
+		if ( isset( $already_done[ $img_location ] ) ) {
+			return $already_done[ $img_location ];
+		}
+
+		/* Process */
+
+		// Basename without query string
+		$filename = explode( '/', basename( $href ) );
+		$filename = array_shift( $filename );
+
+		$filename = sanitize_file_name( urldecode( $filename ) );
+
+		if ( ! preg_match( '/\.(jpe?g|gif|png)$/i', $filename ) ) {
+			// Unsupported image type
+			$already_done[ $img_location ] = '';
+
+			return '';
+		}
+
+		$image_content = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . $filename, false );
+		if ( ! $image_content ) {
+			$already_done[ $img_location ] = '';
+
+			return '';
+		}
+
+		$tmp_name = $this->createTmpFile();
+
+		if ( is_null( $tmp_name ) ) {
+			$tmp_name = $this->baseDirectory . '/' . $id . '/' . $filename;
+		} else {
+			file_put_contents( $tmp_name, $image_content );
+		}
+
+		if ( ! \Pressbooks\Image\is_valid_image( $tmp_name, $filename ) ) {
+
+			try { // changing the file name so that extension matches the mime type
+				$filename = $this->properImageExtension( $tmp_name, $filename );
+
+				if ( ! \Pressbooks\Image\is_valid_image( $tmp_name, $filename ) ) {
+					throw new \Exception( 'Image is corrupt, and file extension matches the mime type' );
+				}
+			} catch ( \Exception $exc ) {
+				// Garbage, Don't import
+				$already_done[ $img_location ] = '';
+
+				return '';
+			}
+		}
+
+		$pid = media_handle_sideload( [ 'name' => $filename, 'tmp_name' => $tmp_name ], 0 );
+
+		if ( is_wp_error( $pid ) ) {
+			$error_message = $pid->get_error_message();
+			error_log( '\Pressbooks\Modules\Import\OpenStax\Cnx::fetchAndSaveUniqueImage error, media_handle_sideload ' . $filename . $error_message );
+			$already_done[ $img_location ] = '';
+
+			return '';
+
+		}
+		$src = wp_get_attachment_url( $pid );
+
+		if ( ! $src ) {
+			$src = ''; // Change false to empty string
+		}
+		$already_done[ $img_location ] = $src;
+
+		return $src;
+	}
+
+
+	/**
+	 * Get existing Meta Post, if none exists create one
+	 *
+	 * attribution for this function belongs to Pressbooks
+	 * /inc/modules/import/wxr/class-wxr.php
+	 *
+	 * @return int Post ID
+	 */
+	protected function bookInfoPid() {
+
+		$post = ( new \Pressbooks\Metadata() )->getMetaPost();
+		if ( empty( $post->ID ) ) {
+			$new_post = [
+				'post_title'  => __( 'Book Info', 'pressbooks' ),
+				'post_type'   => 'metadata',
+				'post_status' => 'publish',
+			];
+			$pid      = wp_insert_post( add_magic_quotes( $new_post ) );
+		} else {
+			$pid = $post->ID;
+		}
+
+		return $pid;
+	}
+
+	/**
+	 * @see \Pressbooks\Admin\Metaboxes\add_meta_boxes
+	 *
+	 * modified from original, though attribution for original function belongs to Pressbooks
+	 * /inc/modules/import/wxr/class-wxr.php
+	 *
+	 * @param int $pid Post ID
+	 * @param array $p Single Item Returned From \Pressbooks\Modules\Import\WordPress\Parser::parse
+	 */
+	protected function importMetaBoxes( $pid, $meta ) {
+
+		// List of meta data keys that can support multiple values:
+		$multiple = [
+			'pb_contributing_authors' => true,
+			'pb_keywords_tags'        => true,
+			'pb_bisac_subject'        => true,
+		];
+
+		// Clear old meta boxes
+		$metadata = get_post_meta( $pid );
+		foreach ( $metadata as $key => $val ) {
+			// Does key start with pb_ prefix?
+			if ( 0 === strpos( $key, 'pb_' ) ) {
+				delete_post_meta( $pid, $key );
+			}
+		}
+
+		// Import post meta
+		foreach ( $meta as $k => $v ) {
+			if ( 0 === strpos( $k, 'pb_' ) ) {
+				if ( isset( $multiple[ $k ] ) && is_array( $v ) ) {
+					// Multi value
+					$i     = 0;
+					$limit = count( $v );
+					do {
+						add_post_meta( $pid, $k, $v[ $i ] );
+						$i ++;
+					} while ( $i < $limit );
+				} else {
+					// Single value
+					if ( ! add_post_meta( $pid, $k, $v, true ) ) {
+						update_post_meta( $pid, $k, $v );
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param $uri
+	 *
+	 * @return string
+	 */
+	private function extractLicense( $uri ) {
+		if ( empty( $uri ) ) {
+			return '';
+		}
+		$val_in_pb = [ 'public-domain', 'cc-by', 'cc-by-sa', 'cc-by-nd', 'cc-by-nc', 'cc-by-nc-sa', 'cc-by-nc-nd' ];
+
+		$uri_parts = wp_parse_url( $uri );
+		if ( 'creativecommons.org' == $uri_parts['host'] ) {
+			$uri_path             = explode( '/', $uri_parts['path'] );
+			$formatted_license    = 'cc-' . $uri_path[2];
+			$pb_formatted_license = ( in_array( $formatted_license, $val_in_pb ) ) ? $formatted_license : '';
+		}
+
+		return $pb_formatted_license;
+	}
+
+	/**
+	 * @param $html
+	 *
+	 * @return string
+	 */
+	protected function getPostMeta( $html ) {
+		if ( empty( $html ) ) {
+			return '';
+		}
+		// Load HTMl snippet into DOMDocument using UTF-8 hack
+		$utf8_hack = '<?xml version="1.0" encoding="UTF-8"?>';
+		$doc       = new \DOMDocument();
+		$doc->loadHTML( $utf8_hack . $html );
+
+		$meta = $doc->getElementsByTagName( 'meta' );
+		foreach ( $meta as $m ) {
+			$name = $m->getAttribute( 'name' );
+			switch ( $name ) {
+				case 'license':
+					$content['license'] = $m->getAttribute( 'content' );
+					break;
+				case 'author':
+					$content['author'] = $m->getAttribute( 'content' );
+					break;
+			}
+
+		}
+
+		$content['license'] = $this->extractLicense( $content['license'] );
+		unset( $doc );
+
+		return $content;
+	}
 }
