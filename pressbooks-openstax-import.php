@@ -7,6 +7,8 @@
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
  * Version:         0.1.0
+ * License:         GPL-3.0+
+ * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Project Sponsor: BCcampus
  *
  * @package         Pressbooks_Openstax_Import
