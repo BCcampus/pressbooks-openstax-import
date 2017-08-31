@@ -62,4 +62,4 @@ functionality in Pressbooks still works, but does not have as robust support for
 6. Navigate to `tools -> Import` and select `Zip (OpenStax zip file)` from the dropdown menu 
 
 ## Screenshots ##
-![screenshot](/pb-os-import.png?raw=true "import screenshot")
+![screenshot](/assets/img/pb-os-import.png?raw=true "import screenshot")

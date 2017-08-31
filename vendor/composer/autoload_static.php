@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit6e12a31b0c56afd7d5d665802e481b90
+class ComposerStaticInit0251a4d3a724f733af6975bd3ee01567
 {
     public static $files = array (
         'f51bb131284ceb3bf7d980d1de33e647' => __DIR__ . '/..' . '/collizo4sky/persist-admin-notices-dismissal/persist-admin-notices-dismissal.php',
