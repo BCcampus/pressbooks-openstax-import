@@ -1,4 +1,4 @@
-=== Presbooks OpenStax Import ===
+=== Pressbooks OpenStax Import ===
 Contributors: bdolor, aparedes
 Tags: pressbooks, openstax, textbook, import
 Requires at least: 4.8.1
@@ -12,7 +12,7 @@ A WordPress plugin that extends [Pressbooks](https://github.com/pressbooks/press
 
 == Description ==
 
-Adds an option to the PressBooks import tool named `Zip (OpenStax zip file)`. This new option asks for a link of the OpenStax Zip file. (You can get the link from the downloads section of the OpenStax book you'd like to import.)
+Adds an option to the Pressbooks import tool named `Zip (OpenStax zip file)`. This new option asks for a link of the OpenStax Zip file. (You can get the link from the downloads section of the OpenStax book you'd like to import.)
 
 **Primary Use Case**
 
@@ -54,8 +54,3 @@ See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more
 = 0.1.0-RC1 =
 * Release Candidate
 * Will work with >= v4.0.0 of Pressbooks
-
-
-
-
-

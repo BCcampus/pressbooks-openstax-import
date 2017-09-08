@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:     Presbooks OpenStax Import
- * Description:     OpentStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
+ * Plugin Name:     Pressbooks OpenStax Import
+ * Description:     OpenStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
  * Author:          Brad Payne, Alex Paredes
  * Author URI:      https://bradpayne.ca
  * Text Domain:     pressbooks-openstax-import
