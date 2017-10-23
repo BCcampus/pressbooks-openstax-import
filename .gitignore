@@ -3,6 +3,7 @@ Thumbs.db
 .sql
 .tar.gz
 .zip
+.idea
 tests/
 !vendor
 vendor/*
