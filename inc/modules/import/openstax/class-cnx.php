@@ -151,7 +151,6 @@ class Cnx extends Import {
 			}
 
 			$post_type = $this->determinePostType( $id );
-			$meta      = $this->getPostMeta( $html );
 			$content   = $this->kneadHtml( $html, $id );
 
 			$pid = $this->insertNewPost( $content, $chapter_title, $post_type, $chapter_parent, $current_import['default_post_status'] );
@@ -161,8 +160,6 @@ class Cnx extends Import {
 			} else {
 				update_post_meta( $pid, 'pb_show_title', 'on' );
 				update_post_meta( $pid, 'pb_export', 'on' );
-				update_post_meta( $pid, 'pb_section_license', $meta['license'] );
-				update_post_meta( $pid, 'pb_section_author', $meta['author'] );
 			}
 
 			Book::consolidatePost( $pid, get_post( $pid ) ); // Reorder
