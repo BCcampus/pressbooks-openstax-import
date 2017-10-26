@@ -121,7 +121,6 @@ class Cnx extends Import {
 	 * @return bool
 	 */
 	function import( array $current_import ) {
-		// TODO: Implement import() method.
 		try {
 			$this->setValidZip( $current_import['download_url_file'] );
 			$metadata = $this->parseManifestMetadata();
@@ -327,7 +326,7 @@ class Cnx extends Import {
 		$namespaces     = $xml->getDocNamespaces();
 		$test_for_units = $xml->xpath( '/col:collection/col:content/col:subcollection/col:content/col:subcollection' );
 		$path           = ( empty( $test_for_units ) ) ? '/col:collection/col:content/col:subcollection' : '/col:collection/col:content/col:subcollection/col:content/col:subcollection';
-
+		$appendix       = $xml->xpath( '/col:collection/col:content' );
 
 		foreach ( $xml->xpath( $path ) as $parts ) {
 			$part     = $parts->children( $namespaces['md'] );
@@ -354,6 +353,19 @@ class Cnx extends Import {
 			// otherwise the array gets loooong
 			unset ( $title_name );
 			unset ( $dir_name );
+
+		}
+
+		if ( $appendix ) {
+			foreach ( $appendix as $append ) {
+				$back_matter = $append->children( $namespaces['col'] );
+
+				foreach ( $back_matter->module as $mod ) {
+					$app[ (string) $mod->attributes()->document ] = (string) $mod->children( $namespaces['md'] );
+				}
+
+			}
+			$book['APPENDIX'] = $app;
 
 		}
 
@@ -421,11 +433,28 @@ class Cnx extends Import {
 	/**
 	 * Adjust the array to format we need for wp_options
 	 *
-	 * @param $collection_contents
+	 * @param array $collection_contents
 	 *
 	 * @return mixed
 	 */
-	private function customSort( $collection_contents ) {
+	private function customSort( array $collection_contents ) {
+
+		if ( array_key_exists( 'APPENDIX', $collection_contents ) ) {
+			// peel off the appendix
+			$appendix = $collection_contents['APPENDIX'];
+			unset( $collection_contents['APPENDIX'] );
+
+			$i = 0;
+			foreach ( $appendix as $k => $v ) {
+				$option['chapters'][ $k ] = $v;
+				if ( $i === 0 ) {
+					$option['post_types'][ $k ] = 'front-matter';
+				} else {
+					$option['post_types'][ $k ] = 'back-matter';
+				}
+				$i ++;
+			}
+		}
 
 		foreach ( $collection_contents as $part ) {
 			$option['chapters'][]   = $part['part_title'];
