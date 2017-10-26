@@ -2,7 +2,7 @@
   "name": "bccampus/pressbooks-openstax-import",
   "description": "Imports OpenStax zip files into Pressbooks",
   "type": "wordpress-plugin",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "homepage": "https://github.com/bccampus/pressbooks-openstax-import",
   "license": "GPL-3.0+",
   "authors": [

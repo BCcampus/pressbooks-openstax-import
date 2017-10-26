@@ -1,9 +1,9 @@
 === Pressbooks OpenStax Import ===
 Contributors: bdolor, aparedes
 Tags: pressbooks, openstax, textbook, import
-Requires at least: 4.8.1
-Tested up to: 4.8.1
-Stable tag: 0.1.0
+Requires at least: 4.8.2
+Tested up to: 4.8.2
+Stable tag: 0.1.3
 Requires PHP: 5.6
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html

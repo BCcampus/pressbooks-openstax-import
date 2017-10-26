@@ -16,7 +16,7 @@ The inspiration for this plugin came from wanting to improve our own process for
 a laborious affair. In the fall of 2016 a Development Sprint was held in Houston at Rice University. One of the goals of the sprint
 was to be able to find a programmatic solution to the problem of converting equations during the import process. The XSL files
 by Vasil Yaroshevich are the key component used to convert equations to something that can be rendered in Pressbooks. While I was only able to
-attend the sprint for a couple days remotely, the hard work that other people put into sprint contributed to this functionality.
+attend the sprint for a couple days remotely, would like to acknowledge the work that other people did at that sprint.
 
 FAQ
 ------------
@@ -57,8 +57,7 @@ functionality in Pressbooks still works, but does not have as robust support for
 1. cd /wp-content/plugins
 2. git clone https://github.com/BCcampus/pressbooks-openstax-import.git
 3. Run `composer install --dev` in this plugins directory to install dependencies
-4. Optional: install and network activate [WP QuickLaTeX](https://wordpress.org/plugins/wp-quicklatex/) to enable suport for multi-line math formulas and svg image export.
-5. Network Activate pressbooks-openstax-import through the 'Plugins' menu in PressBooks
+4. Optional: install [WP QuickLaTeX](https://wordpress.org/plugins/wp-quicklatex/) and activate at the book level to enable support for multi-line math formulas and svg image export.
 6. Navigate to `tools -> Import` and select `Zip (OpenStax zip file)` from the dropdown menu
 
 ## Screenshots ##
