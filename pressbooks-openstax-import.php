@@ -96,25 +96,15 @@ function poi_check_latex() {
 	if ( is_plugin_active_for_network( $path ) ) {
 		// quickLaTeX plugin is installed and active, do nothing
 	} else if ( isset( $all_plugins[ $path ] ) ) {
-		// quickLaTex is installed but not active at network level, remind the network administrator to network activate it
-		add_action( 'network_admin_notices', function () {
-			// don't annoy them anymore if they've dismissed the activate notice
-			if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'activate-notice-forever' ) ) {
-				return;
-			}
-			// annoy them if they haven't dismissed the activate notice
-			echo '<div data-dismissible="activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please network activate WP QuickLaTeX for multiline equations and svg image export support. ', 'pressbooks-openstax-import' ) . '</p></div>';
-		} );
 		// quickLaTex is installed but not active at book level, remind the book administrator to activate it
 		if ( ! is_plugin_active( $path ) ) {
-
 			add_action( 'admin_notices', function () {
 				// don't annoy them anymore if they've dismissed the activate notice
 				if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'single-activate-notice-forever' ) ) {
 					return;
 				}
 				// annoy them if they haven't dismissed the activate notice
-				echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import: ' . '</b>' . 'Your Network Administrator has made ' . '<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">' . 'WP QuickLaTeX</a>' . ' available to you from your plugins menu. Please activate it to enable multiline equations, and svg image export support. ', 'pressbooks-openstax-import' ) . '</p></div>';
+				echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import: ' . '</b>' . 'Your Network Administrator has made ' . '<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">' . 'WP QuickLaTeX</a>' . ' available to you from your plugins menu. WP QuickLaTeX supports multiline equations, and svg image exports. ', 'pressbooks-openstax-import' ) . '</p></div>';
 			} );
 		}
 	} else {
