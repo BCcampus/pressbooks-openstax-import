@@ -1,9 +1,9 @@
 .DS_Store
 Thumbs.db
-wp-cli.local.yml
-*.sql
-*.tar.gz
-*.zip
+.sql
+.tar.gz
+.zip
+.idea
 tests/
 !vendor
 vendor/*
