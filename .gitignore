@@ -4,7 +4,6 @@ Thumbs.db
 .tar.gz
 .zip
 .idea
-tests/
 !vendor
 vendor/*
 !vendor/autoload.php
