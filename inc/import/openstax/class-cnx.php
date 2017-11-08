@@ -16,7 +16,6 @@ namespace BCcampus\Import\OpenStax;
 
 use \Pressbooks\Modules\Import\Import;
 use \Pressbooks\Book;
-use \Pressbooks \Metadata;
 
 class Cnx extends Import {
 

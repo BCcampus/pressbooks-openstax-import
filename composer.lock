@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "8674a2509776e12a161e459c33292bc0",
+    "content-hash": "9c917bb4f3766ef44cfefd031bb372ca",
     "packages": [
         {
             "name": "collizo4sky/persist-admin-notices-dismissal",
@@ -136,16 +136,16 @@
         },
         {
             "name": "humanmade/coding-standards",
-            "version": "0.2.1",
+            "version": "0.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/humanmade/coding-standards.git",
-                "reference": "1f1d90c937b1057f1c0999ac65f501db7c72f46c"
+                "reference": "f3974696bf139eb17049ae0ced114cbee1f86b20"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/humanmade/coding-standards/zipball/1f1d90c937b1057f1c0999ac65f501db7c72f46c",
-                "reference": "1f1d90c937b1057f1c0999ac65f501db7c72f46c",
+                "url": "https://api.github.com/repos/humanmade/coding-standards/zipball/f3974696bf139eb17049ae0ced114cbee1f86b20",
+                "reference": "f3974696bf139eb17049ae0ced114cbee1f86b20",
                 "shasum": ""
             },
             "require": {
@@ -158,7 +158,7 @@
                 "GPL-2.0"
             ],
             "description": "Human Made coding standards",
-            "time": "2016-12-08T08:41:35+00:00"
+            "time": "2017-08-31T03:33:08+00:00"
         },
         {
             "name": "myclabs/deep-copy",

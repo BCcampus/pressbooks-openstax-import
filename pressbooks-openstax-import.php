@@ -43,7 +43,7 @@ function poi_init() {
 
 		return;
 	} else {
-		require_once POI_DIR . 'inc/modules/import/openstax/class-cnx.php';
+		require_once POI_DIR . 'autoloader.php';
 	}
 	/**
 	 * Composer autoloader (if needed)
