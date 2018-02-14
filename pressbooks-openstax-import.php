@@ -2,8 +2,8 @@
 /**
  * Plugin Name:     Pressbooks OpenStax Import
  * Description:     OpenStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
- * Author:          Brad Payne, Alex Paredes
- * Author URI:      https://bradpayne.ca
+ * Author:          Brad Payne
+ * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
  * Version:         0.1.3

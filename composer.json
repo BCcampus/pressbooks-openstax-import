@@ -8,12 +8,11 @@
   "authors": [
     {
       "name": "Brad Payne",
-      "email": "brad@bradpayne.ca",
-      "homepage": "https://bradpayne.ca"
+      "homepage": "https://github.com/bdolor"
     },
     {
       "name": "aparedes",
-      "email": "aparedes@bccampus.ca"
+      "homepage": "https://github.com/alexpflores"
     }
   ],
   "require-dev": {
