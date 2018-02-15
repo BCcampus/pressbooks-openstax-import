@@ -54,9 +54,9 @@ add_action( 'init', function () {
 		} );
 
 		return;
-	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0', '>=' ) ) {
+	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0-beta', '>=' ) ) {
 		add_action( 'admin_notices', function () {
-			echo '<div id="message" class="error fade"><p>' . __( 'Pressbooks OpenStax Import requires Pressbooks 4.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
+			echo '<div id="message" class="error fade"><p>' . __( 'Pressbooks OpenStax Import requires Pressbooks 5.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
 		} );
 
 		return;
