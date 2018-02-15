@@ -18,6 +18,10 @@ use \Pressbooks\Modules\Import\Import;
 use \Pressbooks\Book;
 
 class Cnx extends Import {
+	/**
+	 * added for pb5 compatibility
+	 */
+	CONST TYPE_OF = 'zip';
 
 	/**
 	 * @var \ZipArchive
@@ -238,7 +242,10 @@ class Cnx extends Import {
 	}
 
 	/**
+	 * collection.xml is the manifest file
+	 * 
 	 * @return array
+	 * @throws \Exception
 	 */
 	private function parseManifestMetadata() {
 
@@ -485,7 +492,7 @@ class Cnx extends Import {
 		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
 
 		if ( false === $xhtml_string ) {
-			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id );
+			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id . ' maybe only index.cnxml is available');
 		}
 
 		libxml_use_internal_errors( true ); // fetch error info
