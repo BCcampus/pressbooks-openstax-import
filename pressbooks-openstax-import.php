@@ -2,11 +2,11 @@
 /**
  * Plugin Name:     Pressbooks OpenStax Import
  * Description:     OpenStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
- * Author:          Brad Payne, Alex Paredes
- * Author URI:      https://bradpayne.ca
+ * Author:          Brad Payne
+ * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         0.1.3
+ * Version:         1.0.0
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Project Sponsor: BCcampus
@@ -20,15 +20,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 	return;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
-// Setup some defaults
-// -------------------------------------------------------------------------------------------------------------------
-
+/*
+|--------------------------------------------------------------------------
+| Constants
+|--------------------------------------------------------------------------
+|
+|
+|
+|
+*/
 if ( ! defined( 'POI_DIR' ) ) {
 	define( 'POI_DIR', __DIR__ . '/' );
 } // Must have trailing slash!
 
-function poi_init() {
+/*
+|--------------------------------------------------------------------------
+| House Keeping
+|--------------------------------------------------------------------------
+|
+|
+|
+|
+*/
+/**
+ * check requirements before loading our class
+ * trigger admin notices to nudge
+ */
+add_action( 'init', function () {
 	// Must meet miniumum requirements
 	if ( ! @include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) {
 		add_action( 'admin_notices', function () {
@@ -36,9 +54,9 @@ function poi_init() {
 		} );
 
 		return;
-	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '3.9.9', '>=' ) ) {
+	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0-beta', '>=' ) ) {
 		add_action( 'admin_notices', function () {
-			echo '<div id="message" class="error fade"><p>' . __( 'Pressbooks OpenStax Import requires Pressbooks 4.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
+			echo '<div id="message" class="error fade"><p>' . __( 'Pressbooks OpenStax Import requires Pressbooks 5.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
 		} );
 
 		return;
@@ -51,51 +69,20 @@ function poi_init() {
 	if ( file_exists( $composer = POI_DIR . 'vendor/autoload.php' ) ) {
 		require_once( $composer );
 	}
-}
-
-add_action( 'init', 'poi_init' );
+} );
 
 /**
- * Will add our flavour of import to the select list on import page
- *
- * @param $types
- *
- * @return mixed
+ * Verify WP QuickLaTeX is installed and active,
+ * notice goes away once activated or dismissed
  */
-function poi_add_import_type( $types ) {
-	if ( is_array( $types ) && ! array_key_exists( 'cnx', $types ) ) {
-		$types['zip'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)', 'pressbooks-openstax-import' );
-	}
-
-	return $types;
-}
-
-add_filter( 'pb_select_import_type', 'poi_add_import_type' );
-
-/**
- * Inserts our OpenStax Class into the mix
- *
- * @return OpenStax\Cnx
- */
-function poi_add_initialize_import() {
-	$importer = new OpenStax\Cnx();
-
-	return $importer;
-}
-
-add_filter( 'pb_initialize_import', 'poi_add_initialize_import' );
-
-/**
- * Verify WP QuickLaTeX is installed and active, notice goes away once activated or dismissed
- */
-function poi_check_latex() {
+add_action( 'admin_init', function () {
 	$path = 'wp-quicklatex/wp-quicklatex.php';
 
 	$all_plugins = get_plugins();
 
 	if ( is_plugin_active_for_network( $path ) ) {
 		// quickLaTeX plugin is installed and active, do nothing
-	} else if ( isset( $all_plugins[ $path ] ) ) {
+	} elseif ( isset( $all_plugins[ $path ] ) ) {
 		// quickLaTex is installed but not active at book level, remind the book administrator to activate it
 		if ( ! is_plugin_active( $path ) ) {
 			add_action( 'admin_notices', function () {
@@ -120,6 +107,49 @@ function poi_check_latex() {
 			echo '<div data-dismissible="install-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support. ', 'pressbooks-openstax-import' ) . '</p></div>';
 		} );
 	}
-}
+} );
 
-add_action( 'admin_init', 'poi_check_latex' );
+/*
+|--------------------------------------------------------------------------
+| Business Time
+|--------------------------------------------------------------------------
+|
+|
+|
+|
+*/
+/**
+ * Will add our flavour of import to the select list on import page
+ *
+ * @param $types
+ *
+ * @return mixed
+ */
+add_filter( 'pb_select_import_type', function ( $types ) {
+	if ( is_array( $types ) && ! array_key_exists( 'cnx', $types ) ) {
+		$types['zip'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)', 'pressbooks-openstax-import' );
+	}
+
+	return $types;
+} );
+
+/**
+ * Inserts our OpenStax Class into the mix
+ *
+ * @return OpenStax\Cnx
+ */
+add_filter( 'pb_initialize_import', function ( $importer ) {
+	$importer[] = new OpenStax\Cnx();
+
+	return $importer;
+} );
+
+/**
+ * added for pb5 compatibility, default timeout on http->request is 5
+ * new additions to import routine causing unnecessary, early timeouts
+ */
+add_filter( 'http_request_timeout', function ( $timeout ) {
+	$timeout = 15;
+
+	return $timeout;
+} );

@@ -1,9 +1,9 @@
 === Pressbooks OpenStax Import ===
 Contributors: bdolor, aparedes
 Tags: pressbooks, openstax, textbook, import
-Requires at least: 4.8.2
-Tested up to: 4.8.2
-Stable tag: 0.1.3
+Requires at least: 4.9.4
+Tested up to: 4.9.4
+Stable tag: 1.0.0
 Requires PHP: 5.6
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -51,6 +51,9 @@ OER are defined as “teaching, learning, and research resources that reside in 
 == Changelog ==
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
+
+= 1.0.0 02/15/18 =
+* compatibility with PB 5
 
 = 0.1.3 10/26/17 =
 * fixed an issue where front-matter and back-matter were not importing

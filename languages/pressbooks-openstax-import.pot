@@ -42,5 +42,5 @@ msgid "Brad Payne"
 msgstr ""
 
 #. Author URI of the plugin/theme
-msgid "https://bradpayne.ca"
+msgid "https://github.com/bdolor"
 msgstr ""
