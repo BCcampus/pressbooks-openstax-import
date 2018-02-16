@@ -105,7 +105,7 @@ class Cnx extends Import {
 				'file'              => $tmp_file,
 				'download_url_file' => $tmp_file,
 				'file_type'         => 'application/zip',
-				'type_of'           => TYPE_OF,
+				'type_of'           => 'zip',
 				'chapters'          => $posts['chapters'],
 				'post_types'        => $posts['post_types'],
 				'allow_parts'       => true,
@@ -291,18 +291,17 @@ class Cnx extends Import {
 		$pb_formatted_license = $this->extractLicense( (string) $meta->license->attributes()->url );
 
 		$metadata = [
-			'pb_language'             => (string) $meta->language,
-			'pb_title'                => (string) $meta->title,
-			'pb_publication_date'     => $publication_date,
-			'revised'                 => (string) $meta->revised,
-			'pb_book_license'         => $pb_formatted_license,
-			'pb_about_50'             => (string) $meta->abstract,
-			'pb_keywords_tags'        => (string) $meta->keywordlist->keyword,
-			'pb_author'               => $role['author'],
-			'pb_copyright_holder'     => $role['licensor'],
-			'pb_bisac_subject'        => $subjects,
-			'pb_contributing_authors' => $authors,
-			'organizations'           => $organizations,
+			'pb_language'         => (string) $meta->language,
+			'pb_title'            => (string) $meta->title,
+			'pb_publication_date' => $publication_date,
+			'revised'             => (string) $meta->revised,
+			'pb_book_license'     => $pb_formatted_license,
+			'pb_about_50'         => (string) $meta->abstract,
+			'pb_keywords_tags'    => (string) $meta->keywordlist->keyword,
+			'pb_authors'          => $authors,
+			'pb_copyright_holder' => $role['licensor'],
+			'pb_bisac_subject'    => $subjects,
+			'organizations'       => $organizations,
 		];
 
 		return $metadata;
@@ -492,7 +491,7 @@ class Cnx extends Import {
 		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
 
 		if ( false === $xhtml_string ) {
-			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id . ' maybe only index.cnxml is available');
+			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id . ' maybe only index.cnxml is available' );
 		}
 
 		libxml_use_internal_errors( true ); // fetch error info
@@ -883,9 +882,9 @@ class Cnx extends Import {
 
 		// List of meta data keys that can support multiple values:
 		$multiple = [
-			'pb_contributing_authors' => true,
-			'pb_keywords_tags'        => true,
-			'pb_bisac_subject'        => true,
+			'pb_authors'       => true,
+			'pb_keywords_tags' => true,
+			'pb_bisac_subject' => true,
 		];
 
 		// Clear old meta boxes
