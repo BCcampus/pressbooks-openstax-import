@@ -16,6 +16,6 @@
 
 ### System Information
 
-- Pressbooks OpenStax Import: [Enter POI Version here] 
+- Openstax Import for Pressbooks: [Enter POI Version here] 
 - Pressbooks: [Enter PB Version number here] 
 - WordPress: [Enter WP Version number here] 

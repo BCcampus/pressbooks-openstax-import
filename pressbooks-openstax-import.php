@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:     Pressbooks OpenStax Import
+ * Plugin Name:     Openstax Import for Pressbooks
  * Description:     OpenStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
  * Author:          Brad Payne
  * Author URI:      https://github.com/bdolor
@@ -50,13 +50,13 @@ add_action( 'init', function () {
 	// Must meet miniumum requirements
 	if ( ! @include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) {
 		add_action( 'admin_notices', function () {
-			echo '<div id="message" class="error fade"><p>' . __( 'Pressbooks OpenStax Import cannot find a Pressbooks install.', 'pressbooks-openstax-import' ) . '</p></div>';
+			echo '<div id="message" class="error fade"><p>' . __( 'Openstax Import for Pressbooks cannot find a Pressbooks install.', 'pressbooks-openstax-import' ) . '</p></div>';
 		} );
 
 		return;
-	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0-beta', '>=' ) ) {
+	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0-beta.1', '>=' ) ) {
 		add_action( 'admin_notices', function () {
-			echo '<div id="message" class="error fade"><p>' . __( 'Pressbooks OpenStax Import requires Pressbooks 5.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
+			echo '<div id="message" class="error fade"><p>' . __( 'Openstax Import for Pressbooks requires Pressbooks 5.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
 		} );
 
 		return;
@@ -149,7 +149,7 @@ add_filter( 'pb_initialize_import', function ( $importer ) {
  * new additions to import routine causing unnecessary, early timeouts
  */
 add_filter( 'http_request_timeout', function ( $timeout ) {
-	$timeout = 15;
+	$timeout = 600;
 
 	return $timeout;
 } );

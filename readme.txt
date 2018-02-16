@@ -1,4 +1,4 @@
-=== Pressbooks OpenStax Import ===
+=== Openstax Import for Pressbooks ===
 Contributors: bdolor, aparedes
 Tags: pressbooks, openstax, textbook, import
 Requires at least: 4.9.4

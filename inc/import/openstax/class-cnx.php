@@ -86,7 +86,7 @@ class Cnx extends Import {
 		$valid_domain = wp_parse_url( $upload['url'] );
 
 		if ( 0 === strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 === strcmp( $valid_domain['scheme'], 'https' ) ) ) {
-			$tmp_file = download_url( $upload['url'], 600 );
+			$tmp_file = $upload['file'];
 
 			try {
 				$this->setValidZip( $tmp_file );
@@ -105,7 +105,7 @@ class Cnx extends Import {
 				'file'              => $tmp_file,
 				'download_url_file' => $tmp_file,
 				'file_type'         => 'application/zip',
-				'type_of'           => 'zip',
+				'type_of'           => TYPE_OF,
 				'chapters'          => $posts['chapters'],
 				'post_types'        => $posts['post_types'],
 				'allow_parts'       => true,
@@ -243,7 +243,7 @@ class Cnx extends Import {
 
 	/**
 	 * collection.xml is the manifest file
-	 * 
+	 *
 	 * @return array
 	 * @throws \Exception
 	 */
