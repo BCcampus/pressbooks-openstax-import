@@ -6,7 +6,7 @@
  * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         1.0.0
+ * Version:         1.0.0-rc.1
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Project Sponsor: BCcampus
@@ -54,9 +54,9 @@ add_action( 'init', function () {
 		} );
 
 		return;
-	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0-beta', '>=' ) ) {
+	} elseif ( ! version_compare( PB_PLUGIN_VERSION, '5.0.0-rc.1', '>=' ) ) {
 		add_action( 'admin_notices', function () {
-			echo '<div id="message" class="error fade"><p>' . __( 'Openstax Import for Pressbooks requires Pressbooks 5.0.0 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
+			echo '<div id="message" class="error fade"><p>' . __( 'Openstax Import for Pressbooks requires Pressbooks 5.0.0-rc.1 or greater.', 'pressbooks-openstax-import' ) . '</p></div>';
 		} );
 
 		return;

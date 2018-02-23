@@ -3,7 +3,7 @@ Contributors: bdolor, aparedes
 Tags: pressbooks, openstax, textbook, import
 Requires at least: 4.9.4
 Tested up to: 4.9.4
-Stable tag: 1.0.0
+Stable tag: 1.0.0-rc.1
 Requires PHP: 5.6
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -52,7 +52,7 @@ OER are defined as “teaching, learning, and research resources that reside in 
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
 
-= 1.0.0 02/15/18 =
+= 1.0.0-rc.1 02/23/18 =
 * compatibility with PB 5
 
 = 0.1.3 10/26/17 =

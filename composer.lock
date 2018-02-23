@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "727575c3bb661338022ad713b67a4459",
+    "content-hash": "5260ae16dd0bdff1f388f78ff9cbcc35",
     "packages": [
         {
             "name": "collizo4sky/persist-admin-notices-dismissal",
