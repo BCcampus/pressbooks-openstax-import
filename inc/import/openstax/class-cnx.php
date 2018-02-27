@@ -2,7 +2,7 @@
 /**
  * Project: pressbooks
  * Project Sponsor: BCcampus <https://bccampus.ca>
- * Copyright 2012-2017 Brad Payne <https://bradpayne.ca>
+ * Copyright 2012-2017 Brad Payne
  * Date: 2017-06-16
  * Licensed under GPLv3, or any later version
  *
@@ -16,9 +16,12 @@ namespace BCcampus\Import\OpenStax;
 
 use \Pressbooks\Modules\Import\Import;
 use \Pressbooks\Book;
-use \Pressbooks \Metadata;
 
 class Cnx extends Import {
+	/**
+	 * added for pb5 compatibility
+	 */
+	CONST TYPE_OF = 'zip';
 
 	/**
 	 * @var \ZipArchive
@@ -83,7 +86,7 @@ class Cnx extends Import {
 		$valid_domain = wp_parse_url( $upload['url'] );
 
 		if ( 0 === strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 === strcmp( $valid_domain['scheme'], 'https' ) ) ) {
-			$tmp_file = download_url( $upload['url'], 600 );
+			$tmp_file = $upload['file'];
 
 			try {
 				$this->setValidZip( $tmp_file );
@@ -239,7 +242,10 @@ class Cnx extends Import {
 	}
 
 	/**
+	 * collection.xml is the manifest file
+	 *
 	 * @return array
+	 * @throws \Exception
 	 */
 	private function parseManifestMetadata() {
 
@@ -285,18 +291,17 @@ class Cnx extends Import {
 		$pb_formatted_license = $this->extractLicense( (string) $meta->license->attributes()->url );
 
 		$metadata = [
-			'pb_language'             => (string) $meta->language,
-			'pb_title'                => (string) $meta->title,
-			'pb_publication_date'     => $publication_date,
-			'revised'                 => (string) $meta->revised,
-			'pb_book_license'         => $pb_formatted_license,
-			'pb_about_50'             => (string) $meta->abstract,
-			'pb_keywords_tags'        => (string) $meta->keywordlist->keyword,
-			'pb_author'               => $role['author'],
-			'pb_copyright_holder'     => $role['licensor'],
-			'pb_bisac_subject'        => $subjects,
-			'pb_contributing_authors' => $authors,
-			'organizations'           => $organizations,
+			'pb_language'         => (string) $meta->language,
+			'pb_title'            => (string) $meta->title,
+			'pb_publication_date' => $publication_date,
+			'revised'             => (string) $meta->revised,
+			'pb_book_license'     => $pb_formatted_license,
+			'pb_about_50'         => (string) $meta->abstract,
+			'pb_keywords_tags'    => (string) $meta->keywordlist->keyword,
+			'pb_authors'          => $authors,
+			'pb_copyright_holder' => $role['licensor'],
+			'pb_bisac_subject'    => $subjects,
+			'organizations'       => $organizations,
 		];
 
 		return $metadata;
@@ -486,7 +491,7 @@ class Cnx extends Import {
 		$xhtml_string = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . 'index.cnxml.html', false );
 
 		if ( false === $xhtml_string ) {
-			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id );
+			throw new \Exception( 'Required file index.cnxml.html could not be found, maybe post_type is Part, ID = ' . $id . ' maybe only index.cnxml is available' );
 		}
 
 		libxml_use_internal_errors( true ); // fetch error info
@@ -877,9 +882,9 @@ class Cnx extends Import {
 
 		// List of meta data keys that can support multiple values:
 		$multiple = [
-			'pb_contributing_authors' => true,
-			'pb_keywords_tags'        => true,
-			'pb_bisac_subject'        => true,
+			'pb_authors'       => true,
+			'pb_keywords_tags' => true,
+			'pb_bisac_subject' => true,
 		];
 
 		// Clear old meta boxes

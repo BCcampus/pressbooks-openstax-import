@@ -1,4 +1,4 @@
-# Pressbooks OpenStax Import #
+# Openstax Import for Pressbooks #
 
 A WordPress plugin that extends [Pressbooks](https://github.com/pressbooks/pressbooks) to let you import openly licensed books from OpenStax.
 
