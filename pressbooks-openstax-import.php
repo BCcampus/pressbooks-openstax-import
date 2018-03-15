@@ -6,9 +6,11 @@
  * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         1.0.0
+ * Version:         1.0.1
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
+ * Tags: pressbooks, OER, publishing, import, cnx, openstax
+ * Pressbooks tested up to: 5.1.0
  * Project Sponsor: BCcampus
  *
  * @package         Pressbooks_Openstax_Import
@@ -127,7 +129,7 @@ add_action( 'admin_init', function () {
  */
 add_filter( 'pb_select_import_type', function ( $types ) {
 	if ( is_array( $types ) && ! array_key_exists( 'cnx', $types ) ) {
-		$types['zip'] = __( 'ZIP (OpenStax zip file, only from https://cnx.org)', 'pressbooks-openstax-import' );
+		$types['zip'] = __( 'cnx.org (Import from URL of .zip file)', 'pressbooks-openstax-import' );
 	}
 
 	return $types;
