@@ -129,7 +129,7 @@ add_action( 'admin_init', function () {
  */
 add_filter( 'pb_select_import_type', function ( $types ) {
 	if ( is_array( $types ) && ! array_key_exists( 'cnx', $types ) ) {
-		$types['zip'] = __( 'cnx.org (Import from URL of .zip file)', 'pressbooks-openstax-import' );
+		$types['zip'] = __( 'cnx.org (.zip or URL)', 'pressbooks-openstax-import' );
 	}
 
 	return $types;
