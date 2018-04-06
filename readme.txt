@@ -51,7 +51,8 @@ OER are defined as “teaching, learning, and research resources that reside in 
 == Changelog ==
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
-= 1.0.1 2018/04/06 =
+
+= 1.1.1 2018/04/06 =
 * fix upload zip file functionality
 
 = 1.0.1 2018/03/15 =
