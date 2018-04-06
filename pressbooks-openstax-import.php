@@ -151,7 +151,7 @@ add_filter( 'pb_initialize_import', function ( $importer ) {
  * new additions to import routine causing unnecessary, early timeouts
  */
 add_filter( 'http_request_timeout', function ( $timeout ) {
-	$timeout = 600;
+	$timeout = 5400;
 
 	return $timeout;
 } );
