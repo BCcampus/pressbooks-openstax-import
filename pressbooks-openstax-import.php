@@ -6,11 +6,11 @@
  * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         1.0.1
+ * Version:         1.1.1
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Tags: pressbooks, OER, publishing, import, cnx, openstax
- * Pressbooks tested up to: 5.1.0
+ * Pressbooks tested up to: 5.2.1
  * Project Sponsor: BCcampus
  *
  * @package         Pressbooks_Openstax_Import
@@ -129,7 +129,7 @@ add_action( 'admin_init', function () {
  */
 add_filter( 'pb_select_import_type', function ( $types ) {
 	if ( is_array( $types ) && ! array_key_exists( 'cnx', $types ) ) {
-		$types['zip'] = __( 'cnx.org (Import from URL of .zip file)', 'pressbooks-openstax-import' );
+		$types['zip'] = __( 'cnx.org (.zip or URL)', 'pressbooks-openstax-import' );
 	}
 
 	return $types;
@@ -151,7 +151,7 @@ add_filter( 'pb_initialize_import', function ( $importer ) {
  * new additions to import routine causing unnecessary, early timeouts
  */
 add_filter( 'http_request_timeout', function ( $timeout ) {
-	$timeout = 600;
+	$timeout = 5400;
 
 	return $timeout;
 } );

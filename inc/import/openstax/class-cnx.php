@@ -85,35 +85,39 @@ class Cnx extends Import {
 		// check that the url is from cnx.org
 		$valid_domain = wp_parse_url( $upload['url'] );
 
-		if ( 0 === strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 === strcmp( $valid_domain['scheme'], 'https' ) ) ) {
-			$tmp_file = $upload['file'];
-
-			try {
-				$this->setValidZip( $tmp_file );
-				$collection_contents = $this->parseManifestContent();
-
-			} catch ( \Exception $e ) {
-				// delete the file before we go
-				unlink( $tmp_file );
-
-				return false;
-			}
-
-			$posts = $this->customSort( $collection_contents );
-
-			$option = [
-				'file'              => $tmp_file,
-				'download_url_file' => $tmp_file,
-				'file_type'         => 'application/zip',
-				'type_of'           => 'zip',
-				'chapters'          => $posts['chapters'],
-				'post_types'        => $posts['post_types'],
-				'allow_parts'       => true,
-			];
-
-			return update_option( 'pressbooks_current_import', $option );
-
+		// blockers
+		if ( isset( $upload['url'] ) && 0 !== strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 !== strcmp( $valid_domain['scheme'], 'https' ) ) ) {
+			return false;
+		} elseif ( $upload['url'] == null && $upload['type'] !== 'application/zip' ) {
+			return false;
 		}
+
+		$tmp_file = $upload['file'];
+
+		try {
+			$this->setValidZip( $tmp_file );
+			$collection_contents = $this->parseManifestContent();
+
+		} catch ( \Exception $e ) {
+			// delete the file before we go
+			unlink( $tmp_file );
+
+			return false;
+		}
+
+		$posts = $this->customSort( $collection_contents );
+
+		$option = [
+			'file'              => $tmp_file,
+			'download_url_file' => $tmp_file,
+			'file_type'         => 'application/zip',
+			'type_of'           => 'zip',
+			'chapters'          => $posts['chapters'],
+			'post_types'        => $posts['post_types'],
+			'allow_parts'       => true,
+		];
+
+		return update_option( 'pressbooks_current_import', $option );
 
 	}
 
