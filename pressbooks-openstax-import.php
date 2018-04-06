@@ -6,11 +6,11 @@
  * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         1.0.1
+ * Version:         1.1.1
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Tags: pressbooks, OER, publishing, import, cnx, openstax
- * Pressbooks tested up to: 5.1.0
+ * Pressbooks tested up to: 5.2.1
  * Project Sponsor: BCcampus
  *
  * @package         Pressbooks_Openstax_Import
