@@ -171,7 +171,7 @@ add_filter( 'all_plugins', function ( $plugins ) {
 
 	if ( ! is_super_admin() ) {
 		// if it's not already active
-		if ( ! is_plugin_active( $slug . '/' . $slug . '.php' ) && ! is_plugin_active_for_network( $slug . '/' . $slug . '.php' ) ) {
+		if ( ! is_plugin_active_for_network( $slug . '/' . $slug . '.php' ) ) {
 			$path   = plugin_dir_path( __DIR__ );
 			$exists = file_exists( $path . '/' . $slug . '/' . $slug . '.php' );
 
