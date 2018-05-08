@@ -155,3 +155,33 @@ add_filter( 'http_request_timeout', function ( $timeout ) {
 
 	return $timeout;
 } );
+
+/**
+ * Pre PB v5.3.0 admins need to be able to activate the
+ * wp-quicklatex plugin, set to fire after
+ * \Pressbooks\Admin\Plugins\filter_plugins
+ */
+add_filter( 'all_plugins', function ( $plugins ) {
+	$slug = 'wp-quicklatex';
+
+	// do nothing if it's already set
+	if ( isset( $plugins[ $slug . '/' . $slug . '.php' ] ) ) {
+		return $plugins;
+	}
+
+	if ( ! is_super_admin() ) {
+		// if it's not already active
+		if ( ! is_plugin_active( $slug . '/' . $slug . '.php' ) && ! is_plugin_active_for_network( $slug . '/' . $slug . '.php' ) ) {
+			$path   = plugin_dir_path( __DIR__ );
+			$exists = file_exists( $path . '/' . $slug . '/' . $slug . '.php' );
+
+			// if file is there and it's not already set
+			if ( $exists ) {
+				$info                                    = get_plugin_data( $path . '/' . $slug . '/' . $slug . '.php', false, false );
+				$plugins[ $slug . '/' . $slug . '.php' ] = $info;
+			}
+		}
+	}
+
+	return $plugins;
+}, 11, 1 );
