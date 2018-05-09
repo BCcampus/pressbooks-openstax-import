@@ -158,8 +158,7 @@ add_filter( 'http_request_timeout', function ( $timeout ) {
 
 /**
  * Pre PB v5.3.0 admins need to be able to activate the
- * wp-quicklatex plugin, set to fire after
- * \Pressbooks\Admin\Plugins\filter_plugins
+ * wp-quicklatex plugin, set to fire after \Pressbooks\Admin\Plugins\filter_plugins
  */
 add_filter( 'all_plugins', function ( $plugins ) {
 	$slug = 'wp-quicklatex';
@@ -175,7 +174,7 @@ add_filter( 'all_plugins', function ( $plugins ) {
 			$path   = plugin_dir_path( __DIR__ );
 			$exists = file_exists( $path . '/' . $slug . '/' . $slug . '.php' );
 
-			// if file is there and it's not already set
+			// if file is there
 			if ( $exists ) {
 				$info                                    = get_plugin_data( $path . '/' . $slug . '/' . $slug . '.php', false, false );
 				$plugins[ $slug . '/' . $slug . '.php' ] = $info;
@@ -185,3 +184,12 @@ add_filter( 'all_plugins', function ( $plugins ) {
 
 	return $plugins;
 }, 11, 1 );
+
+/**
+ * add crude notification mechanism
+ */
+add_action( 'admin_enqueue_scripts', function () {
+	if ( 'pb_import' === $_REQUEST['page'] ) {
+		wp_enqueue_script( 'poi-notify', plugin_dir_url( __FILE__ ) . 'assets/scripts/notifications.js', [ 'jquery' ], null, true );
+	}
+} );
