@@ -192,9 +192,16 @@ add_action( 'admin_enqueue_scripts', function () {
 	if ( 'pb_import' === $_REQUEST['page'] ) {
 		wp_enqueue_script( 'poi-notify', plugin_dir_url( __FILE__ ) . 'assets/scripts/notifications.js', [ 'jquery' ], null, true );
 
-		$quicklatex_status = ( is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) ? 1 : 0;
+		$quicklatex_status       = ( is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) ? 1 : 0;
+		$post_max_size_str       = ini_get( 'post_max_size' );
+		$upload_max_filesize_str = ini_get( 'upload_max_filesize' );
+		$memory_limit_str        = ini_get( 'memory_limit' );
+
 		wp_localize_script( 'poi-notify', 'settings', [
-			'active' => $quicklatex_status,
+			'active'     => $quicklatex_status,
+			'post_max'   => $post_max_size_str,
+			'upload_max' => $upload_max_filesize_str,
+			'memory_max' => $memory_limit_str,
 		] );
 	}
 } );
