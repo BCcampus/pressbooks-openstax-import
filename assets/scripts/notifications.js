@@ -2,8 +2,10 @@
 
     $(document).ready(function () {
 
-        // admin notice to nudge installation on toggle
         var import_form = $('#pb-import-form select');
+        var url_input = $('#import_http');
+
+        // admin notice to nudge installation on toggle
         import_form.on('change', function () {
             var poi = import_form.attr('value');
             if (poi === 'zip' && settings.active == 0) {
@@ -28,6 +30,33 @@
             }
 
         })
+
+        // try to get the value of the url
+        // This script fails on No 'Access-Control-Allow-Origin' header error
+        // CORS (Cross origin resource sharing) - would require CNX to configure their servers to allow
+        // HEAD requests from other domains that would reveal file size (content-length) headers
+
+        // url_input.on('input', function () {
+        //     if ('zip' === import_form.attr('value')) {
+        //         var maybe_url = $(this).val();
+        //         console.log(maybe_url);
+        //
+        //         $.ajax({
+        //             type: 'HEAD',
+        //             url: maybe_url,
+        //             crossDomain: true,
+        //             dataType: 'html',
+        //             headers: 'range: bytes=0-1024',
+        //             success: function(data, textStatus, jqXHR){
+        //                 alert(jqXHR.getResponseHeader('Content-Length'));
+        //             },
+        //             error: function (jqXHR, textStatus, errorThrown) {
+        //                 alert(jqXHR.getResponseHeader('Content-Length'));
+        //             }
+        //         });
+        //     }
+        //
+        // })
 
     });
 
