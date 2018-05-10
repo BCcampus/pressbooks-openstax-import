@@ -22,12 +22,9 @@
             if (poi === 'zip') {
                 $('#wpbody-content').before('<div id="message" class="notice notice-info">' +
                     '<p>If this book is a large file the import routine may take longer than expected. Make sure not to close down your browser during this process.</p></div>');
-                    // '<div id="message" class="notice notice-warning"><p>The following PHP settings may need to be increased if the import fails.</p>' +
-                    // '<ul><li><b>post_max_size</b>: '+ settings.post_max + '</li>' +
-                    // '<li><b>upload_max_filesize</b>: ' + settings.upload_max + '</li>' +
-                    // '<li><b>memory_limit</b>: ' + settings.memory_max + '</li></ul>' +
-                    // '</div>');
             }
+
+
 
         })
 
@@ -57,6 +54,13 @@
         //     }
         //
         // })
+
+        // add potentially helpful error message after any errors
+        $('div .error').after('<div id="message" class="notice notice-warning"><p>The following PHP settings may need to be increased if the import fails due to a <i>maximum file size error</i></p>' +
+            '<ul><li><b>post_max_size</b>: '+ settings.post_max + '</li>' +
+            '<li><b>upload_max_filesize</b>: ' + settings.upload_max + '</li>' +
+            '<li><b>memory_limit</b>: ' + settings.memory_max + '</li></ul>' +
+            '</div>');
 
     });
 
