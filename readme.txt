@@ -52,6 +52,11 @@ OER are defined as “teaching, learning, and research resources that reside in 
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
 
+= 1.2.0 2018/05/11 =
+* add notification at time of import
+* allow admins to activate wp-quicklatex if installed
+* display helpful error messages if import fails
+
 = 1.1.1 2018/04/06 =
 * fix upload zip file functionality
 
