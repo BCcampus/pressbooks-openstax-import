@@ -189,7 +189,7 @@ add_filter( 'all_plugins', function ( $plugins ) {
  * add crude notification mechanism
  */
 add_action( 'admin_enqueue_scripts', function () {
-	if ( 'pb_import' === $_REQUEST['page'] ) {
+	if ( isset( $_REQUEST['page'] ) && 'pb_import' === $_REQUEST['page'] ) {
 		wp_enqueue_script( 'poi-notify', plugin_dir_url( __FILE__ ) . 'assets/scripts/notifications.js', [ 'jquery' ], null, true );
 
 		$quicklatex_status       = ( is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) ? 1 : 0;
