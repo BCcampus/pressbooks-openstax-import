@@ -1,11 +1,4 @@
 .DS_Store
-Thumbs.db
-.sql
 .tar.gz
-.zip
 .idea
-!vendor
-vendor/*
-!vendor/autoload.php
-!vendor/composer
-!vendor/collizo4sky
+vendor/

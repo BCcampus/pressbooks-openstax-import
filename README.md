@@ -1,4 +1,5 @@
 # Openstax Import for Pressbooks #
+[![Build Status](https://travis-ci.com/BCcampus/pressbooks-openstax-import.svg?branch=dev)](https://travis-ci.com/BCcampus/pressbooks-openstax-import)
 
 A WordPress plugin that extends [Pressbooks](https://github.com/pressbooks/pressbooks) to let you import openly licensed books from OpenStax.
 
