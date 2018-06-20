@@ -14,14 +14,14 @@
 
 namespace BCcampus\Import\OpenStax;
 
-use \Pressbooks\Modules\Import\Import;
-use \Pressbooks\Book;
+use Pressbooks\Modules\Import\Import;
+use Pressbooks\Book;
 
 class Cnx extends Import {
 	/**
 	 * added for pb5 compatibility
 	 */
-	CONST TYPE_OF = 'zip';
+	const TYPE_OF = 'zip';
 
 	/**
 	 * @var \ZipArchive
@@ -88,7 +88,7 @@ class Cnx extends Import {
 		// blockers
 		if ( isset( $upload['url'] ) && 0 !== strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 !== strcmp( $valid_domain['scheme'], 'https' ) ) ) {
 			return false;
-		} elseif ( $upload['url'] == null && $upload['type'] !== 'application/zip' ) {
+		} elseif ( $upload['url'] === null && $upload['type'] !== 'application/zip' ) {
 			return false;
 		}
 
@@ -360,8 +360,8 @@ class Cnx extends Import {
 			];
 
 			// otherwise the array gets loooong
-			unset ( $title_name );
-			unset ( $dir_name );
+			unset( $title_name );
+			unset( $dir_name );
 
 		}
 
@@ -372,7 +372,6 @@ class Cnx extends Import {
 				foreach ( $back_matter->module as $mod ) {
 					$app[ (string) $mod->attributes()->document ] = (string) $mod->children( $namespaces['md'] );
 				}
-
 			}
 			$book['APPENDIX'] = $app;
 
@@ -711,7 +710,6 @@ class Cnx extends Import {
 			if ( $new_att ) {
 				$element->setAttribute( 'class', $new_att );
 			}
-
 		}
 
 		$sections = $doc->getElementsByTagName( 'section' );
@@ -827,7 +825,12 @@ class Cnx extends Import {
 			}
 		}
 
-		$pid = media_handle_sideload( [ 'name' => $filename, 'tmp_name' => $tmp_name ], 0 );
+		$pid = media_handle_sideload(
+			[
+				'name' => $filename,
+				'tmp_name' => $tmp_name,
+			], 0
+		);
 
 		if ( is_wp_error( $pid ) ) {
 			$error_message = $pid->get_error_message();
@@ -967,7 +970,6 @@ class Cnx extends Import {
 					$content['author'] = $m->getAttribute( 'content' );
 					break;
 			}
-
 		}
 
 		$content['license'] = $this->extractLicense( $content['license'] );
