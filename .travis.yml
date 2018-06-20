@@ -44,7 +44,7 @@ deploy:
   skip_cleanup: true
   api_key:
     secure: A9dKCNM4Cpj1F5VF0dryywymyqjm/5E6It2OTZ89b4cXl/D/95vBqe74OPwA8+74DJh6y+R7ACEbhrfSgkTp+IFe74IYTmLlLDm5IkA8T9FUtwwcLQNi0qatLiCRF0BEvVD5GK0snUZdIpJmzvUiAptDu+zlFL4QxqWsgrVQLxLxfAZ2jYtA/SL3OVvzX1KAUfJHHV6FkeKN7FPlubmauueNRgOiLYcE4tqMDN4q0LfYFP7Vtp6TTd5OMgvizsUYOUYwL43lZvOsBX5v83bJcIDt1Va8yjnEB6cEoDIhFvsy2dWX4F7gfNCT6EgCxMyD28c//sNRSUXd1HADwIOyza2j86tqXbZD6kC8Rbqs7EX+gs01hlLKXM4yQLglITfkngNl2DbxvEvyhW3SYUdTGzqczmzj6XHolzFpLLxg894CkLflC0vCA8Q/rLjLG+C3dx7d6VHecvJuh6tJq3LNUiMxilq16WWFBE99ambeA6Fzx85r6fpuiBmbTDUHUD6CZdkrRKOwR4PWbAzCHgC5ptwPpflEQAWyai58JLg1p7bhuqQCAFX4wf9idn0xIGs2kgHRv2TT5qRIlITK/y2lW/+sGp1EIlkx8i49zImcjYJ4Dt0oXhDILlJwJsFxmKsg4K9mDebXCmbrdDrOTSQkgNBwjmxUGFdEXPpgbxUnQ3c=
-  file: poi-$TRAVIS_TAG.zip
+  file: pressbooks-openstax-import-$TRAVIS_TAG.zip
   on:
     tags: true
     repo: BCcampus/pressbooks-openstax-import
