@@ -1,0 +1,51 @@
+language: php
+php:
+- 7.0.29
+- 7.1.18
+sudo: required
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+branches:
+  only:
+  - dev
+  - "/\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+env:
+- WP_VERSION=latest
+cache:
+  apt: true
+  directories:
+  - "$HOME/.composer/cache"
+  - node_modules
+  - vendor
+before_install:
+- sudo apt-get -qq update
+install:
+- composer install
+before_script:
+- if [[ ${TRAVIS_PHP_VERSION:0:3} != "7.1" ]] && php -v | grep -q 'Xdebug'; then phpenv
+  config-rm xdebug.ini; fi
+- bash bin/install-wp-tests.sh poi_test root '' localhost $WP_VERSION
+script:
+- vendor/bin/phpunit --configuration phpunit.xml
+before_deploy:
+- export TRAVIS_PROJECT_SLUG="$(basename $TRAVIS_BUILD_DIR)"
+- curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+- chmod +x wp-cli.phar
+- sudo mv wp-cli.phar /usr/local/bin/wp
+- wp package install wp-cli/dist-archive-command
+- composer install --no-dev --optimize-autoloader
+- cd ../
+- wp dist-archive $TRAVIS_PROJECT_SLUG $TRAVIS_BUILD_DIR/$TRAVIS_PROJECT_SLUG-$TRAVIS_TAG.zip
+- cd $TRAVIS_BUILD_DIR
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: A9dKCNM4Cpj1F5VF0dryywymyqjm/5E6It2OTZ89b4cXl/D/95vBqe74OPwA8+74DJh6y+R7ACEbhrfSgkTp+IFe74IYTmLlLDm5IkA8T9FUtwwcLQNi0qatLiCRF0BEvVD5GK0snUZdIpJmzvUiAptDu+zlFL4QxqWsgrVQLxLxfAZ2jYtA/SL3OVvzX1KAUfJHHV6FkeKN7FPlubmauueNRgOiLYcE4tqMDN4q0LfYFP7Vtp6TTd5OMgvizsUYOUYwL43lZvOsBX5v83bJcIDt1Va8yjnEB6cEoDIhFvsy2dWX4F7gfNCT6EgCxMyD28c//sNRSUXd1HADwIOyza2j86tqXbZD6kC8Rbqs7EX+gs01hlLKXM4yQLglITfkngNl2DbxvEvyhW3SYUdTGzqczmzj6XHolzFpLLxg894CkLflC0vCA8Q/rLjLG+C3dx7d6VHecvJuh6tJq3LNUiMxilq16WWFBE99ambeA6Fzx85r6fpuiBmbTDUHUD6CZdkrRKOwR4PWbAzCHgC5ptwPpflEQAWyai58JLg1p7bhuqQCAFX4wf9idn0xIGs2kgHRv2TT5qRIlITK/y2lW/+sGp1EIlkx8i49zImcjYJ4Dt0oXhDILlJwJsFxmKsg4K9mDebXCmbrdDrOTSQkgNBwjmxUGFdEXPpgbxUnQ3c=
+  file: pressbooks-openstax-import-$TRAVIS_TAG.zip
+  on:
+    tags: true
+    repo: BCcampus/pressbooks-openstax-import
+    branch: dev
