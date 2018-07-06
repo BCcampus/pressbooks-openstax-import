@@ -83,6 +83,10 @@ add_action(
  * Verify WP QuickLaTeX is installed and active,
  * notice goes away once activated or dismissed
  */
+
+// needed when using PAnD with autoloader
+add_action( 'admin_init', array( 'PAnD', 'init' ) );
+
 add_action(
 	'admin_init', function () {
 		$path = 'wp-quicklatex/wp-quicklatex.php';
