@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fc686bca05632f9225a04ccde0b76012",
+    "content-hash": "5f25f36662ffdf5e80be93dbe0405242",
     "packages": [
         {
             "name": "collizo4sky/persist-admin-notices-dismissal",
@@ -1439,7 +1439,7 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.4.11",
+            "version": "v3.4.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
