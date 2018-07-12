@@ -70,14 +70,24 @@ add_action(
 		} else {
 			require_once POI_DIR . 'autoloader.php';
 		}
-		/**
-		 * Composer autoloader (if needed)
-		 */
-		if ( file_exists( $composer = POI_DIR . 'vendor/autoload.php' ) ) {
-			require_once( $composer );
-		}
 	}
 );
+
+/**
+ * Composer autoloader (if needed)
+ */
+$composer = POI_DIR . 'vendor/autoload.php';
+
+if ( file_exists( $composer ) ) {
+	require_once( $composer );
+}
+
+/**
+ * must also load the class outside of the admin_notices or
+ * network_admin_notices hooks. The reason is that these hooks come after the
+ * admin_enqueue_script hook that loads the javascript.
+ */
+add_action( 'admin_init', [ 'PAnD', 'init' ] );
 
 /**
  * Verify WP QuickLaTeX is installed and active,
