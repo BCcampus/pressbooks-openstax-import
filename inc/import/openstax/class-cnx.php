@@ -18,6 +18,7 @@ use Pressbooks\Modules\Import\Import;
 use Pressbooks\Book;
 
 class Cnx extends Import {
+
 	/**
 	 * added for pb5 compatibility
 	 */
@@ -54,7 +55,8 @@ class Cnx extends Import {
 	}
 
 	/**
-	 * Mandatory setCurrentImportOption() method, creates WP option 'pressbooks_current_import'
+	 * Mandatory setCurrentImportOption() method, creates WP option
+	 * 'pressbooks_current_import'
 	 *
 	 * $upload should look something like:
 	 *     Array (
@@ -161,7 +163,7 @@ class Cnx extends Import {
 
 			$pid = $this->insertNewPost( $content, $chapter_title, $post_type, $chapter_parent, $current_import['default_post_status'] );
 
-			if ( 'part' == $post_type ) {
+			if ( 'part' === $post_type ) {
 				$chapter_parent = $pid;
 			} else {
 				update_post_meta( $pid, 'pb_show_title', 'on' );
@@ -252,9 +254,12 @@ class Cnx extends Import {
 	 * @throws \Exception
 	 */
 	private function parseManifestMetadata() {
-
-		$collection = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
-		$xml        = $this->safetyDance( $collection->asXML() );
+		$authors       = [];
+		$organizations = [];
+		$subjects      = [];
+		$role          = [];
+		$collection    = $this->getZipContent( $this->baseDirectory . '/' . 'collection.xml', true );
+		$xml           = $this->safetyDance( $collection->asXML() );
 		/*
 		|--------------------------------------------------------------------------
 		| Metadata
@@ -737,7 +742,8 @@ class Cnx extends Import {
 	}
 
 	/**
-	 * Parse HTML snippet, save all found <img> tags using media_handle_sideload(), return the HTML with changed <img> paths.
+	 * Parse HTML snippet, save all found <img> tags using
+	 * media_handle_sideload(), return the HTML with changed <img> paths.
 	 *
 	 * @param \DOMDocument $doc
 	 *
@@ -827,7 +833,7 @@ class Cnx extends Import {
 
 		$pid = media_handle_sideload(
 			[
-				'name' => $filename,
+				'name'     => $filename,
 				'tmp_name' => $tmp_name,
 			], 0
 		);
@@ -933,10 +939,19 @@ class Cnx extends Import {
 		if ( empty( $uri ) ) {
 			return '';
 		}
-		$val_in_pb = [ 'public-domain', 'cc-by', 'cc-by-sa', 'cc-by-nd', 'cc-by-nc', 'cc-by-nc-sa', 'cc-by-nc-nd' ];
+		$pb_formatted_license = '';
+		$val_in_pb            = [
+			'public-domain',
+			'cc-by',
+			'cc-by-sa',
+			'cc-by-nd',
+			'cc-by-nc',
+			'cc-by-nc-sa',
+			'cc-by-nc-nd',
+		];
 
 		$uri_parts = wp_parse_url( $uri );
-		if ( 'creativecommons.org' == $uri_parts['host'] ) {
+		if ( 'creativecommons.org' === $uri_parts['host'] ) {
 			$uri_path             = explode( '/', $uri_parts['path'] );
 			$formatted_license    = 'cc-' . $uri_path[2];
 			$pb_formatted_license = ( in_array( $formatted_license, $val_in_pb ) ) ? $formatted_license : '';
