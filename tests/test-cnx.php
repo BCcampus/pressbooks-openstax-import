@@ -25,8 +25,8 @@ class CnxTest extends WP_UnitTestCase {
 	 * A single example test.
 	 */
 	function test_extractLicense() {
-//		$uri = 'https://somedomainhere.ca';
-//		$this->cnx->extractLicense( $uri );
+		//      $uri = 'https://somedomainhere.ca';
+		//      $this->cnx->extractLicense( $uri );
 		$this->assertTrue( true );
 
 	}

@@ -67,11 +67,11 @@ add_action(
 			);
 
 			return;
-		} else {
-			require_once POI_DIR . 'autoloader.php';
 		}
 	}
 );
+
+require POI_DIR . 'autoloader.php';
 
 /**
  * Composer autoloader (if needed)

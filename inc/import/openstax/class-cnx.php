@@ -14,8 +14,8 @@
 
 namespace BCcampus\Import\OpenStax;
 
-use Pressbooks\Modules\Import\Import;
 use Pressbooks\Book;
+use Pressbooks\Modules\Import\Import;
 
 class Cnx extends Import {
 
