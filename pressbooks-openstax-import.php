@@ -6,11 +6,11 @@
  * Author URI:      https://github.com/bdolor
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         1.2.2
+ * Version:         1.2.4
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Tags: pressbooks, OER, publishing, import, cnx, openstax
- * Pressbooks tested up to: 5.4.0
+ * Pressbooks tested up to: 5.4.5
  * Project Sponsor: BCcampus
  *
  * @package         Pressbooks_Openstax_Import
@@ -67,11 +67,11 @@ add_action(
 			);
 
 			return;
-		} else {
-			require_once POI_DIR . 'autoloader.php';
 		}
 	}
 );
+
+require POI_DIR . 'autoloader.php';
 
 /**
  * Composer autoloader (if needed)
@@ -111,7 +111,7 @@ add_action(
 							return;
 						}
 						// annoy them if they haven't dismissed the activate notice
-						echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import: ' . '</b>' . 'Your Network Administrator has made ' . '<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">' . 'WP QuickLaTeX</a>' . ' available to you from your plugins menu. WP QuickLaTeX supports multiline equations, and svg image exports. ', 'pressbooks-openstax-import' ) . '</p></div>';
+						echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p><b>' . __( 'OpenStax Import', 'pressbooks-openstax-import' ) . ':</b>Your Network Administrator has made<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">WP QuickLaTeX</a>available to you from your plugins menu. WP QuickLaTeX supports multiline equations, and svg image exports.</p></div>';
 					}
 				);
 			}
@@ -126,7 +126,7 @@ add_action(
 					// annoy them if they haven't dismissed the install notice
 					$plugin_name  = 'WP QuickLaTeX';
 					$install_link = '<a href="' . esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $plugin_name . '&TB_iframe=true&width=600&height=550' ) ) . '" target="_parent" title="More info about ' . $plugin_name . '">install</a> and activate';
-					echo '<div data-dismissible="install-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support. ', 'pressbooks-openstax-import' ) . '</p></div>';
+					echo '<div data-dismissible="install-notice-forever" id="message" class="notice notice-warning is-dismissible"><p><b>' . __( 'OpenStax Import', 'pressbooks-openstax-import' ) . ':</b>Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support.</p></div>';
 				}
 			);
 		}
