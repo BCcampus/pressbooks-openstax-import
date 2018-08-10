@@ -60,14 +60,17 @@ class Cnx extends Import {
 	 *
 	 * $upload should look something like:
 	 *     Array (
-	 *       [file] => /home/dac514/public_html/bdolor/wp-content/uploads/sites/2/2013/04/Hello-World-13662149822.epub
-	 *       [url] => http://localhost/~dac514/bdolor/helloworld/wp-content/uploads/sites/2/2013/04/Hello-World-13662149822.epub
+	 *       [file] =>
+	 * /home/dac514/public_html/bdolor/wp-content/uploads/sites/2/2013/04/Hello-World-13662149822.epub
+	 *       [url] =>
+	 * http://localhost/~dac514/bdolor/helloworld/wp-content/uploads/sites/2/2013/04/Hello-World-13662149822.epub
 	 *       [type] => application/epub+zip
 	 *     )
 	 *
 	 * 'pressbooks_current_import' should look something like:
 	 *     Array (
-	 *       [file] => '/home/dac514/public_html/bdolor/wp-content/uploads/sites/2/imports/Hello-World-1366214982.epub'
+	 *       [file] =>
+	 * '/home/dac514/public_html/bdolor/wp-content/uploads/sites/2/imports/Hello-World-1366214982.epub'
 	 *       [file_type] => 'application/epub+zip'
 	 *       [type_of] => 'epub'
 	 *       [chapters] => Array (
@@ -90,7 +93,7 @@ class Cnx extends Import {
 		// blockers
 		if ( isset( $upload['url'] ) && 0 !== strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 !== strcmp( $valid_domain['scheme'], 'https' ) ) ) {
 			return false;
-		} elseif ( $upload['url'] === null && $upload['type'] !== 'application/zip' ) {
+		} elseif ( $upload['url'] === NULL && $upload['type'] !== 'application/zip' ) {
 			return false;
 		}
 
@@ -649,7 +652,8 @@ class Cnx extends Import {
 		$doc = $this->scrapeAndKneadImages( $doc, $id );
 		// Modify class styles to match PB, get rid of unnecessary content
 		$doc = $this->scrapeCnxCruft( $doc );
-
+		// convert iframes to oembed, if possible
+		$doc = $this->convertIframes( $doc );
 		// If you are storing multi-byte characters in XML, then saving the XML using saveXML() will create problems.
 		// Ie. It will spit out the characters converted in encoded format. Instead do the following:
 		$html = $doc->saveXML( $doc->documentElement );
@@ -670,11 +674,31 @@ class Cnx extends Import {
 	 *
 	 * @return \DOMDocument
 	 */
+	protected function convertIframes( \DOMDocument $doc ) {
+		$iframes = $doc->getElementsByTagName( 'iframe' );
+
+		if ( $iframes->length > 0 ) {
+			for ( $i = $iframes->length; -- $i >= 0; ) { // If you're deleting elements from within a loop, you need to loop backwards
+				$iframe   = $iframes->item( $i );
+				$src      = $iframe->getAttribute( 'src' );
+				$fragment = $doc->createTextNode( "[embed]{$src}[/embed]" );
+				$iframe->parentNode->replaceChild( $doc->importNode( $fragment, true ), $iframe );
+			}
+		}
+
+		return $doc;
+	}
+
+	/**
+	 * @param \DOMDocument $doc
+	 *
+	 * @return \DOMDocument
+	 */
 	protected function scrapeCnxCruft( \DOMDocument $doc ) {
 
 		$cnx = $doc->getElementsByTagName( 'cnx-pi' );
 
-		// foreach internal pointer get messed up
+		// foreach internal pointer gets messed up
 		// two foreach statements necessary
 		if ( $cnx->length > 0 ) {
 			foreach ( $cnx as $cruft ) {
@@ -885,11 +909,13 @@ class Cnx extends Import {
 	/**
 	 * @see \Pressbooks\Admin\Metaboxes\add_meta_boxes
 	 *
-	 * modified from original, though attribution for original function belongs to Pressbooks
+	 * modified from original, though attribution for original function belongs
+	 *     to Pressbooks
 	 * /inc/modules/import/wxr/class-wxr.php
 	 *
 	 * @param int $pid Post ID
-	 * @param array $p Single Item Returned From \Pressbooks\Modules\Import\WordPress\Parser::parse
+	 * @param array $p Single Item Returned From
+	 *     \Pressbooks\Modules\Import\WordPress\Parser::parse
 	 */
 	protected function importMetaBoxes( $pid, $meta ) {
 
