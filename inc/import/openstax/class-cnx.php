@@ -93,7 +93,7 @@ class Cnx extends Import {
 		// blockers
 		if ( isset( $upload['url'] ) && 0 !== strcmp( $valid_domain['host'], 'cnx.org' ) && ( 0 !== strcmp( $valid_domain['scheme'], 'https' ) ) ) {
 			return false;
-		} elseif ( $upload['url'] === NULL && $upload['type'] !== 'application/zip' ) {
+		} elseif ( $upload['url'] === null && $upload['type'] !== 'application/zip' ) {
 			return false;
 		}
 

@@ -111,7 +111,7 @@ add_action(
 							return;
 						}
 						// annoy them if they haven't dismissed the activate notice
-						echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import: ' . '</b>' . 'Your Network Administrator has made ' . '<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">' . 'WP QuickLaTeX</a>' . ' available to you from your plugins menu. WP QuickLaTeX supports multiline equations, and svg image exports. ', 'pressbooks-openstax-import' ) . '</p></div>';
+						echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p><b>' . __( 'OpenStax Import', 'pressbooks-openstax-import' ) . ':</b>Your Network Administrator has made<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">WP QuickLaTeX</a>available to you from your plugins menu. WP QuickLaTeX supports multiline equations, and svg image exports.</p></div>';
 					}
 				);
 			}
@@ -126,7 +126,7 @@ add_action(
 					// annoy them if they haven't dismissed the install notice
 					$plugin_name  = 'WP QuickLaTeX';
 					$install_link = '<a href="' . esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $plugin_name . '&TB_iframe=true&width=600&height=550' ) ) . '" target="_parent" title="More info about ' . $plugin_name . '">install</a> and activate';
-					echo '<div data-dismissible="install-notice-forever" id="message" class="notice notice-warning is-dismissible"><p>' . __( '<b>' . 'OpenStax Import:' . '</b>' . ' Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support. ', 'pressbooks-openstax-import' ) . '</p></div>';
+					echo '<div data-dismissible="install-notice-forever" id="message" class="notice notice-warning is-dismissible"><p><b>' . __( 'OpenStax Import', 'pressbooks-openstax-import' ) . ':</b>Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support.</p></div>';
 				}
 			);
 		}
