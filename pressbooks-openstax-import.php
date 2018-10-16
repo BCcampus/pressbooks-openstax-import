@@ -38,7 +38,7 @@ use BCcampus\Import\OpenStax;
 add_action(
 	'init', function () {
 		// Must meet miniumum requirements
-		if ( ! include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) {
+		if ( ! @include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) { // @codingStandardsIgnoreLine
 			add_action(
 				'admin_notices', function () {
 					echo '<div id="message" class="error fade"><p>' . __( 'Openstax Import for Pressbooks cannot find a Pressbooks install.', 'pressbooks-openstax-import' ) . '</p></div>';
