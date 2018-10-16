@@ -82,57 +82,6 @@ if ( file_exists( $composer ) ) {
 	require_once( $composer );
 }
 
-/**
- * must also load the class outside of the admin_notices or
- * network_admin_notices hooks. The reason is that these hooks come after the
- * admin_enqueue_script hook that loads the javascript.
- */
-add_action( 'admin_init', [ 'PAnD', 'init' ] );
-
-/**
- * Verify WP QuickLaTeX is installed and active,
- * notice goes away once activated or dismissed
- */
-add_action(
-	'admin_init', function () {
-		$path = 'wp-quicklatex/wp-quicklatex.php';
-
-		$all_plugins = get_plugins();
-
-		if ( is_plugin_active_for_network( $path ) ) {
-			// quickLaTeX plugin is installed and active, do nothing
-		} elseif ( isset( $all_plugins[ $path ] ) ) {
-			// quickLaTex is installed but not active at book level, remind the book administrator to activate it
-			if ( ! is_plugin_active( $path ) ) {
-				add_action(
-					'admin_notices', function () {
-						// don't annoy them anymore if they've dismissed the activate notice
-						if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'single-activate-notice-forever' ) ) {
-							return;
-						}
-						// annoy them if they haven't dismissed the activate notice
-						echo '<div data-dismissible="single-activate-notice-forever" id="message" class="notice notice-warning is-dismissible"><p><b>' . __( 'OpenStax Import', 'pressbooks-openstax-import' ) . ':</b>Your Network Administrator has made<a target="_blank" href="https://en-ca.wordpress.org/plugins/wp-quicklatex/">WP QuickLaTeX</a>available to you from your plugins menu. WP QuickLaTeX supports multiline equations, and svg image exports.</p></div>';
-					}
-				);
-			}
-		} else {
-			// remind Network Admin to install quickLaTeX
-			add_action(
-				'network_admin_notices', function () {
-					// don't annoy them if they've dismissed install notice
-					if ( class_exists( 'PAnD' ) && ! PAnD::is_admin_notice_active( 'install-notice-forever' ) ) {
-						return;
-					}
-					// annoy them if they haven't dismissed the install notice
-					$plugin_name  = 'WP QuickLaTeX';
-					$install_link = '<a href="' . esc_url( network_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $plugin_name . '&TB_iframe=true&width=600&height=550' ) ) . '" target="_parent" title="More info about ' . $plugin_name . '">install</a> and activate';
-					echo '<div data-dismissible="install-notice-forever" id="message" class="notice notice-warning is-dismissible"><p><b>' . __( 'OpenStax Import', 'pressbooks-openstax-import' ) . ':</b>Please ' . $install_link . ' ' . $plugin_name . ' for multiline equations and svg image export support.</p></div>';
-				}
-			);
-		}
-	}
-);
-
 /*
 |--------------------------------------------------------------------------
 | Business Time
