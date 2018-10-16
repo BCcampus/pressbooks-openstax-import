@@ -16,24 +16,11 @@
  * @package         Pressbooks_Openstax_Import
  */
 
-use BCcampus\Import\OpenStax;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Constants
-|--------------------------------------------------------------------------
-|
-|
-|
-|
-*/
-if ( ! defined( 'POI_DIR' ) ) {
-	define( 'POI_DIR', __DIR__ . '/' );
-} // Must have trailing slash!
+use BCcampus\Import\OpenStax;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,7 +38,7 @@ if ( ! defined( 'POI_DIR' ) ) {
 add_action(
 	'init', function () {
 		// Must meet miniumum requirements
-		if ( ! @include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) {
+		if ( ! include_once( WP_PLUGIN_DIR . '/pressbooks/compatibility.php' ) ) {
 			add_action(
 				'admin_notices', function () {
 					echo '<div id="message" class="error fade"><p>' . __( 'Openstax Import for Pressbooks cannot find a Pressbooks install.', 'pressbooks-openstax-import' ) . '</p></div>';
@@ -71,12 +58,18 @@ add_action(
 	}
 );
 
-require POI_DIR . 'autoloader.php';
+/*
+|--------------------------------------------------------------------------
+| Autoload
+|--------------------------------------------------------------------------
+|
+|
+|
+|
+*/
+require __DIR__ . '/autoloader.php';
 
-/**
- * Composer autoloader (if needed)
- */
-$composer = POI_DIR . 'vendor/autoload.php';
+$composer = __DIR__ . '/vendor/autoload.php';
 
 if ( file_exists( $composer ) ) {
 	require_once( $composer );
@@ -169,7 +162,7 @@ add_filter(
  */
 add_action(
 	'admin_enqueue_scripts', function () {
-		if ( isset( $_REQUEST['page'] ) && 'pb_import' === $_REQUEST['page'] ) {
+		if ( isset( $_REQUEST['page'] ) && 'pb_import' === $_REQUEST['page'] ) { // @codingStandardsIgnoreLine
 			wp_enqueue_script( 'poi-notify', plugin_dir_url( __FILE__ ) . 'assets/scripts/notifications.js', [ 'jquery' ], null, true );
 
 			$quicklatex_status       = ( is_plugin_active( 'wp-quicklatex/wp-quicklatex.php' ) ) ? 1 : 0;
