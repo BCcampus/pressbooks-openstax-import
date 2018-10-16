@@ -13,8 +13,7 @@ This plugin was built primarily to support the creation, remixing, and distribut
 
 **Development Sprint**
 
-The inspiration for this plugin came from wanting to improve our own process for bringing in OpenStax Textbooks;
-a laborious affair. In the fall of 2016 a Development Sprint was held in Houston at Rice University. One of the goals of the sprint
+The inspiration for this plugin came from wanting to improve our own process for bringing in OpenStax Textbooks. In the fall of 2016 a Development Sprint was held in Houston at Rice University. One of the goals of the sprint
 was to be able to find a programmatic solution to the problem of converting equations during the import process. The XSL files
 by Vasil Yaroshevich are the key component used to convert equations to something that can be rendered in Pressbooks. While I was only able to
 attend the sprint for a couple days remotely, would like to acknowledge the work that other people did at that sprint.
