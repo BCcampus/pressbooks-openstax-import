@@ -623,6 +623,7 @@ class Cnx extends Import {
 		// Make XHTML 1.1 strict using htmlLawed
 
 		$config = [
+			'tidy'               => - 1,
 			'safe'               => 1,
 			'valid_xhtml'        => 1,
 			'no_deprecated_attr' => 2,

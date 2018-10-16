@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3241a05f31b56234987a3d58d6c42d04",
+    "content-hash": "5ed8e1456707dee9c73c35393e37772f",
     "packages": [
         {
             "name": "collizo4sky/persist-admin-notices-dismissal",
@@ -1719,7 +1719,8 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.1"
+        "php": ">=7.1",
+        "ext-libxml": "*"
     },
     "platform-dev": [],
     "platform-overrides": {

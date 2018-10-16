@@ -52,6 +52,9 @@ OER are defined as “teaching, learning, and research resources that reside in 
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
 
+= 1.2.5 2018/10/16 =
+* compatibility with pb 5.5.3
+
 = 1.2.4 2018/08/09 =
 * convert iframes to [embed] tags (props @greatislander)
 * move admin notices into accessible area (props @greatislander)
