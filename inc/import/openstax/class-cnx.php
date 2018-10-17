@@ -158,7 +158,9 @@ class Cnx extends Import {
 				$html = $this->mathTransform( $id );
 
 			} catch ( \Exception $e ) {
-				error_log( $e );
+				if ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) {
+					error_log( $e ); // @codingStandardsIgnoreLine
+				}
 			}
 
 			$post_type = $this->determinePostType( $id );
@@ -215,7 +217,7 @@ class Cnx extends Import {
 		libxml_disable_entity_loader( $old_value );
 
 		if ( ! $success || isset( $dom->doctype ) ) {
-			throw new \Exception( print_r( libxml_get_errors(), true ) );
+			throw new \Exception( print_r( libxml_get_errors(), true ) ); // @codingStandardsIgnoreLine
 		}
 
 		$xml = simplexml_import_dom( $dom );
@@ -223,7 +225,7 @@ class Cnx extends Import {
 
 		// halt if loading produces an error
 		if ( ! $xml ) {
-			throw new \Exception( print_r( libxml_get_errors(), true ) );
+			throw new \Exception( print_r( libxml_get_errors(), true ) ); // @codingStandardsIgnoreLine
 		}
 
 		libxml_clear_errors();
@@ -243,7 +245,7 @@ class Cnx extends Import {
 		$cnx      = wp_parse_url( $meta->repository, PHP_URL_HOST );
 		$expected = [ 'cnx.org', 'legacy.cnx.org' ];
 
-		if ( ! in_array( $cnx, $expected ) ) {
+		if ( ! in_array( $cnx, $expected, true ) ) {
 			throw new \Exception( 'The expected CNX repository does not appear to be where this file has been retrieved from' );
 		}
 
@@ -523,7 +525,9 @@ class Cnx extends Import {
 		libxml_disable_entity_loader( $old_value );
 
 		if ( ! $ok ) {
-			error_log( print_r( libxml_get_errors(), true ) );
+			if ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) {
+				error_log( print_r( libxml_get_errors(), true ) ); // @codingStandardsIgnoreLine
+			}
 		}
 		libxml_clear_errors();
 
@@ -623,6 +627,7 @@ class Cnx extends Import {
 		// Make XHTML 1.1 strict using htmlLawed
 
 		$config = [
+			'tidy'               => - 1,
 			'safe'               => 1,
 			'valid_xhtml'        => 1,
 			'no_deprecated_attr' => 2,
@@ -659,7 +664,9 @@ class Cnx extends Import {
 		$html = $doc->saveXML( $doc->documentElement );
 
 		if ( ! $html ) {
-			error_log( print_r( libxml_get_errors(), true ) );
+			if ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) {
+				error_log( print_r( libxml_get_errors(), true ) ); // @codingStandardsIgnoreLine
+			}
 		}
 		libxml_clear_errors();
 
@@ -864,7 +871,9 @@ class Cnx extends Import {
 
 		if ( is_wp_error( $pid ) ) {
 			$error_message = $pid->get_error_message();
-			error_log( '\Pressbooks\Modules\Import\OpenStax\Cnx::fetchAndSaveUniqueImage error, media_handle_sideload ' . $filename . $error_message );
+			if ( defined( 'WP_ENV' ) && WP_ENV === 'development' ) {
+				error_log( '\Pressbooks\Modules\Import\OpenStax\Cnx::fetchAndSaveUniqueImage error, media_handle_sideload ' . $filename . $error_message ); // @codingStandardsIgnoreLine
+			}
 			$already_done[ $img_location ] = '';
 
 			return '';
@@ -980,7 +989,7 @@ class Cnx extends Import {
 		if ( 'creativecommons.org' === $uri_parts['host'] ) {
 			$uri_path             = explode( '/', $uri_parts['path'] );
 			$formatted_license    = 'cc-' . $uri_path[2];
-			$pb_formatted_license = ( in_array( $formatted_license, $val_in_pb ) ) ? $formatted_license : '';
+			$pb_formatted_license = ( in_array( $formatted_license, $val_in_pb, true ) ) ? $formatted_license : '';
 		}
 
 		return $pb_formatted_license;
