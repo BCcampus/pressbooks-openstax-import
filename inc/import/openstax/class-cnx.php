@@ -808,7 +808,8 @@ class Cnx extends Import {
 	 * @return false|mixed|string
 	 */
 	protected function fetchAndSaveUniqueImage( $href, $id ) {
-		$img_location = $href;
+		$img_location  = $href;
+		$space_in_name = false;
 
 		// Cheap cache
 		static $already_done = [];
@@ -819,16 +820,20 @@ class Cnx extends Import {
 		/* Process */
 
 		// Basename without query string
-		$filename = explode( '/', basename( $href ) );
-		$filename = array_shift( $filename );
-
-		$filename = sanitize_file_name( urldecode( $filename ) );
+		$filename      = explode( '/', basename( $href ) );
+		$filename      = array_shift( $filename );
+		$space_in_name = strpos( $filename, ' ' );
+		$filename      = sanitize_file_name( urldecode( $filename ) );
 
 		if ( ! preg_match( '/\.(jpe?g|gif|png)$/i', $filename ) ) {
 			// Unsupported image type
 			$already_done[ $img_location ] = '';
 
 			return '';
+		}
+
+		if ( false !== $space_in_name ) {
+			$filename = $this->checkFileForSpaces( $space_in_name, $this->baseDirectory . '/' . $id . '/' . $filename );
 		}
 
 		$image_content = $this->getZipContent( $this->baseDirectory . '/' . $id . '/' . $filename, false );
@@ -1026,5 +1031,30 @@ class Cnx extends Import {
 		unset( $doc );
 
 		return $content;
+	}
+
+	/**
+	 *
+	 * @param $space_index
+	 * @param $filename
+	 *
+	 * @return string
+	 */
+	private function checkFileForSpaces( $space_index, $filename ) {
+		$new   = '';
+		$index = intval( $space_index );
+		if ( file_exists( $filename ) ) {
+			$tmp = explode( '/', $filename );
+			$new = array_pop( $tmp );
+		} elseif ( ! file_exists( $filename ) ) {
+			$tmp    = explode( '/', $filename );
+			$switch = str_split( array_pop( $tmp ) );
+			if ( $switch[ $index ] === '-' ) {
+				$switch[ $index ] = '%20';
+				$new              = implode( '', $switch );
+			}
+		}
+
+		return $new;
 	}
 }
