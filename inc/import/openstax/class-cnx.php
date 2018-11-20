@@ -1036,22 +1036,25 @@ class Cnx extends Import {
 	/**
 	 *
 	 * @param $space_index
-	 * @param $filename
+	 * @param $file_path
 	 *
 	 * @return string
 	 */
-	private function checkFileForSpaces( $space_index, $filename ) {
-		$new   = '';
+	private function checkFileForSpaces( $space_index, $file_path ) {
+		$tmp   = explode( '/', $file_path );
 		$index = intval( $space_index );
-		if ( file_exists( $filename ) ) {
-			$tmp = explode( '/', $filename );
+
+		// if it ain't broke, return filename as is
+		if ( file_exists( $file_path ) ) {
 			$new = array_pop( $tmp );
-		} elseif ( ! file_exists( $filename ) ) {
-			$tmp    = explode( '/', $filename );
+		} else {
 			$switch = str_split( array_pop( $tmp ) );
 			if ( $switch[ $index ] === '-' ) {
 				$switch[ $index ] = '%20';
 				$new              = implode( '', $switch );
+			} else {
+				// back up returns filename as it came in
+				$new = array_pop( $tmp );
 			}
 		}
 
