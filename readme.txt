@@ -50,7 +50,7 @@ OER are defined as “teaching, learning, and research resources that reside in 
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
 
-= 1.3.0 2018/11/20 =
+= 1.3.1 2018/11/20 =
 * [bug] fix images with spaces in file name
 * [bug] fix footnote references
 * compatibility with PB 5.6.0
