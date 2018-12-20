@@ -2,8 +2,8 @@
 Contributors: bdolor, aparedes
 Tags: pressbooks, openstax, textbook, import
 Requires at least: 4.9.8
-Tested up to: 4.9.8
-Stable tag: 1.3.1
+Tested up to: 5.0.2
+Stable tag: 1.3.2
 Requires PHP: 7.1
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -21,8 +21,7 @@ This plugin was built primarily to support the creation, remixing, and distribut
 **Development Sprint**
 
 The inspiration for this plugin came from wanting to improve our own process for bringing in OpenStax Textbooks. In the fall of 2016 a Development Sprint was held in Houston at Rice University. One of the goals of the sprint
-was to be able to find a programmatic solution to the problem of converting equations during the import process. The XSL files
-by Vasil Yaroshevich are the key component used to convert equations to something that can be rendered in Pressbooks.
+was to be able to find a programmatic solution to the problem of converting equations during the import process. The XSL files by Vasil Yaroshevich are the key component used to convert equations to something that can be rendered in Pressbooks.
 
 == Installation ==
 
@@ -49,6 +48,9 @@ OER are defined as “teaching, learning, and research resources that reside in 
 == Changelog ==
 
 See: https://github.com/BCcampus/pressbooks-openstax-import/commits/dev for more detail
+
+= 1.3.2 2018/11/20 =
+* compatibility with PB 5.6.3
 
 = 1.3.1 2018/11/20 =
 * [bug] fix images with spaces in file name
