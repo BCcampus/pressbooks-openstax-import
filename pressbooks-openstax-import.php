@@ -2,15 +2,15 @@
 /**
  * Plugin Name:     Openstax Import for Pressbooks
  * Description:     OpenStax Textbook Import. Enables the importing of 'Offline ZIP' files from the cnx.org domain
- * Author:          Brad Payne
- * Author URI:      https://github.com/bdolor
+ * Author:          BCcampus
+ * Author URI:      https://github.com/BCcampus
  * Text Domain:     pressbooks-openstax-import
  * Domain Path:     /languages
- * Version:         1.3.2
+ * Version:         1.3.3
  * License:         GPL-3.0+
  * License URI:     http://www.gnu.org/licenses/gpl-3.0.txt
  * Tags: pressbooks, OER, publishing, import, cnx, openstax
- * Pressbooks tested up to: 5.6.3
+ * Pressbooks tested up to: 5.7.0
  * Project Sponsor: BCcampus
  *
  * @package         Pressbooks_Openstax_Import
@@ -67,7 +67,12 @@ add_action(
 |
 |
 */
-require __DIR__ . '/autoloader.php';
+
+if ( function_exists( '\HM\Autoloader\register_class_path' ) ) {
+	\HM\Autoloader\register_class_path( 'BCcampus', __DIR__ . '/inc' );
+} else {
+	require_once( __DIR__ . '/autoloader.php' );
+}
 
 $composer = __DIR__ . '/vendor/autoload.php';
 
